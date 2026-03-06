@@ -8,17 +8,35 @@ India's platform-based delivery partners (Zomato, Swiggy, Zepto, Amazon, Dunzo, 
 
 **Food Delivery Partners — Zomato / Swiggy**
 
-## 📌 Initial Ideas
+Rationale: Food delivery riders are the largest and most vulnerable segment. They operate in dense urban zones and are most exposed to rain, flooding, and pollution events that directly halt deliveries.
 
-- Build a parametric insurance platform for gig workers
-- Weekly premium model to match gig worker pay cycles
-- Automated payouts triggered by weather/disaster APIs
-- No manual claim filing required
+## 👤 Personas (Draft)
+
+### Persona 1 — Raju Verma
+- **City:** Delhi (Lajpat Nagar / Greater Kailash)
+- **Platform:** Swiggy + Zomato
+- **Weekly earnings:** ~₹5,500
+- **Scenario:** Heavy rainfall floods his zone. Loses full day income with no compensation.
+
+### Persona 2 — Meena Devi
+- **City:** Delhi (Dwarka)
+- **Platform:** Swiggy
+- **Weekly earnings:** ~₹4,750
+- **Scenario:** AQI crosses 400 for 3 days. Works reduced hours, partial income lost.
+
+## ⚙️ Workflow (Draft)
+
+1. Worker onboards with KYC
+2. Selects zone and coverage plan
+3. Pays weekly premium
+4. App monitors triggers in background
+5. Trigger fires → auto payout to UPI
 
 ## 🔌 APIs to Research
 - IMD Mausam (weather)
 - NDMA SACHET (disaster alerts)
 - AQICN (air quality)
+- Tomorrow.io (supplemental)
 
 ## 📅 Development Plan
 
