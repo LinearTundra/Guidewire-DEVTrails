@@ -30,13 +30,33 @@ Rationale: Food delivery riders are the largest and most vulnerable segment. The
 - **Weekly earnings:** ~₹6,000
 - **Scenario:** Unplanned local bandh shuts down his pickup zone for a full day.
 
-## ⚙️ Workflow (Draft)
+## ⚙️ Workflow
 
-1. Worker onboards with KYC
-2. Selects zone and coverage plan
-3. Pays weekly premium
-4. App monitors triggers in background
-5. Trigger fires → auto payout to UPI
+### Stage 1: Onboarding
+1. Worker downloads GigShield app
+2. Aadhaar-based KYC verification
+3. Selects operating zone and coverage plan
+4. Adds UPI ID for payouts
+5. Account created, base risk profile generated
+
+### Stage 2: Premium Calculation
+1. System retrieves historical disruption data for worker's zone
+2. Zone Risk Factor computed from flood history, AQI levels, road closures
+3. Base weekly premium set from risk factor
+4. ML model adjusts premium week-over-week
+
+### Stage 3: Active Coverage
+1. Policy live for 7 days from payment
+2. App runs in background logging GPS passively
+
+### Stage 4: Trigger Monitoring
+1. APIs polled every hour for worker's zone
+2. Threshold crossed → worker flagged automatically
+3. Fraud checks run in parallel
+
+### Stage 5: Payout
+1. Auto-transferred via UPI within 24 hours
+2. Worker notified in-app
 
 ## ⚡ Parametric Triggers
 
@@ -53,16 +73,23 @@ Rationale: Food delivery riders are the largest and most vulnerable segment. The
 |---|---|---|
 | Curfew / Bandh | News API / Govt alert feed | Active curfew in district |
 
-## 🔌 APIs
+## 💰 Weekly Premium Model
 
-| Purpose | API | Cost |
+**Premium = Base Rate × Zone Risk Factor × Coverage Multiplier**
+
+| Zone Risk Tier | Description | Example Weekly Premium |
 |---|---|---|
-| Weather | IMD Mausam API | Free |
-| Disaster alerts | NDMA SACHET | Free |
-| Air quality | AQICN (WAQI) | Free |
-| Supplemental weather | Tomorrow.io | Free tier |
-| KYC | IDfy / Karza | Paid per-call |
-| Payments | Razorpay | Per-transaction |
+| Low | Historically safe zone, low AQI, no flood record | ₹25 |
+| Medium | Occasional disruptions, moderate AQI | ₹38 |
+| High | Frequent floods, high AQI, disaster-prone | ₹55 |
+
+## 🔌 Tech Stack (Draft)
+
+- **Frontend:** Flutter (Android + iOS)
+- **Backend:** Python + FastAPI
+- **Database:** MongoDB
+- **ML:** XGBoost
+- **APIs:** IMD, NDMA, AQICN, Tomorrow.io, IDfy, Razorpay
 
 ## 📅 Development Plan
 
