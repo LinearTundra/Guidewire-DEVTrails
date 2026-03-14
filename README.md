@@ -10,25 +10,31 @@ India's platform-based delivery partners (Zomato, Swiggy, Zepto, Amazon, Dunzo, 
 
 Rationale: Food delivery riders are the largest and most vulnerable segment. They operate in dense urban zones and are most exposed to rain, flooding, and pollution events that directly halt deliveries.
 
-## 👤 Personas (Draft)
+## 👤 Personas
 
 ### Persona 1 — Raju Verma
+- **Age:** 28
 - **City:** Delhi (Lajpat Nagar / Greater Kailash)
 - **Platform:** Swiggy + Zomato
 - **Weekly earnings:** ~₹5,500
-- **Scenario:** Heavy rainfall floods his zone. Loses full day income with no compensation.
+- **Weekly premium:** ₹38 (High risk zone)
+- **Scenario:** Heavy rainfall triggers IMD red alert. GigShield detects trigger, cross-checks GPS inactivity, auto-transfers ₹785 to UPI within 24 hours.
 
 ### Persona 2 — Meena Devi
+- **Age:** 34
 - **City:** Delhi (Dwarka)
 - **Platform:** Swiggy
 - **Weekly earnings:** ~₹4,750
-- **Scenario:** AQI crosses 400 for 3 days. Works reduced hours, partial income lost.
+- **Weekly premium:** ₹35 (Medium risk zone)
+- **Scenario:** AQI crosses 400 for 3 days. Partial payout of ₹950 triggered automatically.
 
 ### Persona 3 — Arjun Singh
+- **Age:** 24
 - **City:** Delhi (Karol Bagh)
 - **Platform:** Zomato
 - **Weekly earnings:** ~₹6,000
-- **Scenario:** Unplanned local bandh shuts down his pickup zone for a full day.
+- **Weekly premium:** ₹42 (Medium-High risk zone)
+- **Scenario:** Unplanned bandh shuts Karol Bagh. GPS confirms inactivity. Full day payout ₹857 triggered.
 
 ## ⚙️ Workflow
 
@@ -44,10 +50,13 @@ Rationale: Food delivery riders are the largest and most vulnerable segment. The
 2. Zone Risk Factor computed from flood history, AQI levels, road closures
 3. Base weekly premium set from risk factor
 4. ML model adjusts premium week-over-week
+5. Worker pays weekly premium upfront
+6. 2-week waiting period before first claim eligibility
 
 ### Stage 3: Active Coverage
 1. Policy live for 7 days from payment
 2. App runs in background logging GPS passively
+3. No action required from worker
 
 ### Stage 4: Trigger Monitoring
 1. APIs polled every hour for worker's zone
@@ -57,6 +66,7 @@ Rationale: Food delivery riders are the largest and most vulnerable segment. The
 ### Stage 5: Payout
 1. Auto-transferred via UPI within 24 hours
 2. Worker notified in-app
+3. Transaction logged for audit trail
 
 ## ⚡ Parametric Triggers
 
@@ -83,18 +93,48 @@ Rationale: Food delivery riders are the largest and most vulnerable segment. The
 | Medium | Occasional disruptions, moderate AQI | ₹38 |
 | High | Frequent floods, high AQI, disaster-prone | ₹55 |
 
-## 🔌 Tech Stack (Draft)
+### Example Policies
+
+| Plan | Weekly Premium | Max Weekly Payout | Covers |
+|---|---|---|---|
+| **Basic** | ₹25 | ₹700 | Extreme rain + flood only |
+| **Standard** | ₹38 | ₹1,200 | Rain + flood + AQI Severe |
+| **Premium** | ₹55 | ₹2,000 | All triggers incl. heat, strike, curfew |
+
+## 🤖 AI/ML Integration
+
+### 1. Dynamic Premium Pricing
+- Model: XGBoost trained on historical zone disruption data
+- Features: flood frequency, average AQI, road closures, seasonal patterns
+- Cold start: new workers assigned city-level base premium
+- Adjusted weekly per worker zone as GPS data accumulates
+
+### 2. Fraud Detection
+| Check | Method | Flag if |
+|---|---|---|
+| Trigger real? | IMD/NDMA/AQICN cross-verify | No official alert found |
+| Worker inactive? | GPS history during claim window | Movement detected |
+| Identity fraud | Aadhaar → linked SIM check | Multiple accounts same ID |
+| Claim anomaly | ML anomaly detection | Unusual claim frequency |
+
+### 3. Zone Risk Scoring
+- Heatmap of each city built from historical IMD, NDMA, traffic data
+- Updated monthly
+- Drives premium zone classification
+
+## 🔌 Tech Stack
 
 - **Frontend:** Flutter (Android + iOS)
 - **Backend:** Python + FastAPI
-- **Database:** MongoDB
-- **ML:** XGBoost
-- **APIs:** IMD, NDMA, AQICN, Tomorrow.io, IDfy, Razorpay
+- **Database:** MongoDB (GeoJSON support for heatmaps)
+- **Cache:** Redis
+- **ML:** XGBoost, retrained weekly
+- **APIs:** IMD, NDMA SACHET, AQICN, Tomorrow.io, IDfy, Razorpay
 
 ## 📅 Development Plan
 
-| Phase | Theme | Deadline |
-|---|---|---|
-| Phase 1 | Ideate & Know Your Worker | March 20 |
-| Phase 2 | Protect Your Worker | April 4 |
-| Phase 3 | Perfect for Your Worker | April 17 |
+| Phase | Theme | Key Deliverables | Deadline |
+|---|---|---|---|
+| Phase 1 | Ideate & Know Your Worker | README, repo, 2-min video | March 20 |
+| Phase 2 | Protect Your Worker | Registration, premium calc, claims, 2-min demo | April 4 |
+| Phase 3 | Perfect for Your Worker | Fraud detection, payout simulation, dashboard, 5-min video | April 17 |
