@@ -278,50 +278,50 @@ Genuine workers caught in a mass flag are never permanently denied. Manual revie
 
 ### Terms & Conditions
 
-**1. Eligibility**
-1.1 Policyholder must be an active gig delivery partner on at least one registered platform.
-1.2 Valid Aadhaar-based KYC must be completed at onboarding.
-1.3 GigShield mobile app must remain installed and active throughout the policy period.
+**1. Eligibility**<br>
+1.1 Policyholder must be an active gig delivery partner on at least one registered platform.<br>
+1.2 Valid Aadhaar-based KYC must be completed at onboarding.<br>
+1.3 GigShield mobile app must remain installed and active throughout the policy period.<br>
 
-**2. Premium & Payment**
-2.1 Premium is charged on a strictly weekly basis, debited every Monday at 12:00 AM IST.
-2.2 If the weekly premium payment fails, coverage lapses immediately for that week.
-2.3 Premium amounts are dynamic and may be revised each week based on the ML risk model, communicated at least 24 hours before debit.
+**2. Premium & Payment**<br>
+2.1 Premium is charged on a strictly weekly basis, debited every Monday at 12:00 AM IST.<br>
+2.2 If the weekly premium payment fails, coverage lapses immediately for that week.<br>
+2.3 Premium amounts are dynamic and may be revised each week based on the ML risk model, communicated at least 24 hours before debit.<br>
 
-**3. Coverage & Payouts**
-3.1 GigShield provides parametric income protection only.
-3.2 Full day payout (1/7th of covered weekly earnings) triggered when GPS inactivity confirmed for 6+ hours.
-3.3 Partial day payout (proportional) triggered when GPS shows reduced movement of 2–5 hours.
-3.4 Total payouts capped at plan's maximum weekly payout.
-3.5 Payout transferred to UPI within 24 hours of trigger verification.
+**3. Coverage & Payouts**<br>
+3.1 GigShield provides parametric income protection only.<br>
+3.2 Full day payout (1/7th of covered weekly earnings) triggered when GPS inactivity confirmed for 6+ hours.<br>
+3.3 Partial day payout (proportional) triggered when GPS shows reduced movement of 2–5 hours.<br>
+3.4 Total payouts capped at plan's maximum weekly payout.<br>
+3.5 Payout transferred to UPI within 24 hours of trigger verification.<br>
 
-**4. Waiting Period**
-4.1 Mandatory 2-week waiting period from first policy activation.
-4.2 Exception: flood and cyclone triggers have 1-week waiting period.
+**4. Waiting Period**<br>
+4.1 Mandatory 2-week waiting period from first policy activation.<br>
+4.2 Exception: flood and cyclone triggers have 1-week waiting period.<br>
 
 **5. Exclusions**
-- Health, medical, or hospitalisation expenses
-- Life insurance or death benefits
-- Accident, injury, or disability claims
-- Vehicle repair, damage, or theft
-- Income loss due to personal reasons
-- Platform-side issues (app downtime, account suspension)
-- Pre-planned events announced > 48 hours in advance
+- Health, medical, or hospitalisation expenses<br>
+- Life insurance or death benefits<br>
+- Accident, injury, or disability claims<br>
+- Vehicle repair, damage, or theft<br>
+- Income loss due to personal reasons<br>
+- Platform-side issues (app downtime, account suspension)<br>
+- Pre-planned events announced > 48 hours in advance<br>
 
-**6. Fraud & Misrepresentation**
-6.1 False zone information at signup = immediate cancellation without refund.
-6.2 GPS spoofing detected = permanent ban and claim rejection.
-6.3 Multiple accounts under same Aadhaar = all policies cancelled.
-6.4 GigShield reserves the right to flag any claim for manual review if anomaly detection raises a fraud signal.
+**6. Fraud & Misrepresentation**<br>
+6.1 False zone information at signup = immediate cancellation without refund.<br>
+6.2 GPS spoofing detected = permanent ban and claim rejection.<br>
+6.3 Multiple accounts under same Aadhaar = all policies cancelled.<br>
+6.4 GigShield reserves the right to flag any claim for manual review if anomaly detection raises a fraud signal.<br>
 
-**7. Claim Process**
-7.1 Fully automated — no manual filing required.
-7.2 Payout dispatched within 24 hours of clean fraud check.
-7.3 Flagged claims resolved within 72 hours.
+**7. Claim Process**<br>
+7.1 Fully automated — no manual filing required.<br>
+7.2 Payout dispatched within 24 hours of clean fraud check.<br>
+7.3 Flagged claims resolved within 72 hours.<br>
 
-**8. Governing Law**
-8.1 Governed by laws of India. Jurisdiction: Delhi.
-8.2 This is a hackathon prototype and does not constitute a legally binding insurance contract.
+**8. Governing Law**<br>
+8.1 Governed by laws of India. Jurisdiction: Delhi.<br>
+8.2 This is a hackathon prototype and does not constitute a legally binding insurance contract.<br>
 
 ---
 
