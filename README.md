@@ -409,6 +409,6 @@ This platform explicitly **does not cover:**
 
 ## 🔗 Repository
 
-**Team:** AFK
-**Team Leader:** Sarthak Kalyani
+**Team:** AFK <br>
+**Team Leader:** Sarthak Kalyani <br>
 **Members:** Sachin Bisht, Sahil Vishwakarma, Saket Kumar, Samdarsh Mahajan
