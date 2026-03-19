@@ -176,46 +176,51 @@ All checks pass → auto payout. Any flag → manual review queue.
 > **Market Crash Event Response:** 500 delivery partners. Fake GPS. Real payouts. A coordinated fraud ring just drained a platform's liquidity pool. Here is how GigShield fights back.
 
 ### The Core Challenge
-A genuine mass flood event and a coordinated fraud ring look identical at the surface level — hundreds of workers in the same zone, all inactive at the same time. Zone-level clustering alone cannot distinguish them. Timing cannot distinguish them because our system auto-triggers simultaneously. We need deeper signals.
+A genuine mass flood event and a coordinated fraud ring look identical at the surface level — hundreds of workers in the same zone, all inactive at the same time. Zone-level clustering alone cannot distinguish them. Timing cannot distinguish them because our system auto-triggers simultaneously for everyone in the affected zone. We need deeper signals.
 
 ### Layer 1 — Individual GPS Spoofing Detection
 
 **Mock Location Flag**
-Android exposes `LocationManagerCompat.isMockLocationEnabled()` on every GPS reading. Any reading flagged as mocked is rejected immediately. The claim is auto-flagged for manual review.
+Android exposes `LocationManagerCompat.isMockLocationEnabled()` on every GPS reading. Any reading flagged as mocked is rejected immediately and the claim is auto-flagged for manual review. This catches the majority of casual spoofing attempts.
+
+**GPS Teleportation Detection**
+Real GPS moves gradually. Spoofed GPS snaps instantly. If a worker's last known coordinate and their new coordinate imply a physically impossible speed — for example jumping from Delhi to a flood zone in Tamil Nadu in 30 seconds — that is an immediate spoof signal. We calculate implied speed between consecutive GPS readings. Implied speed > 200km/h → flag.
 
 **Accelerometer Cross-Check**
-A spoofer can fake GPS coordinates but cannot fake physical stillness. If GPS reports movement through a flooded street but the accelerometer shows zero motion — that is a spoof signal. We cross-check GPS velocity against accelerometer and gyroscope data on every reading. Mismatch → flag.
+Spoofing GPS to appear stationary at home is easy. Faking the sensors is not. If a worker claims they were stranded at home but the accelerometer and gyroscope show real physical movement during the claim window — the phone is physically moving while GPS reports it as stationary. Real movement on sensors + stationary GPS = spoof signal. We cross-check GPS reported velocity against accelerometer data on every reading during the claim window. Mismatch → flag.
 
 **Emulator Detection**
 Sophisticated fraud rings run fake accounts on Android emulators. Emulators have detectable signatures:
 - Unusual build fingerprints (generic manufacturer strings)
 - Missing or non-responsive sensors (no real accelerometer data)
 - Identical hardware specs across supposedly different devices
-Any device matching emulator signatures is flagged at onboarding and blocked from claims.
+
+Any device matching emulator signatures is flagged at onboarding and blocked from claims entirely.
 
 ### Layer 2 — Fraud Ring Detection (Coordinated Attack)
 
 **Account Creation Clustering**
-500 genuine workers onboard gradually over weeks. A fraud ring bulk-creates accounts before a known high-risk event. We flag:
+500 genuine workers onboard gradually over weeks from different devices, different IPs, at different times. A fraud ring bulk-creates accounts before a known high-risk event. We flag:
 - 10+ accounts created within a 24-hour window from the same or nearby IP ranges
 - Accounts with identical or near-identical onboarding timestamps
 - Multiple accounts selecting the same zone + plan + UPI prefix combination at signup
 
 **Android ID Clustering**
-Each Android device has a unique Android ID per app install. A fraud ring using a small number of rooted or emulated devices will produce multiple accounts sharing the same Android ID or device fingerprint. We cross-reference Android IDs at claim time — if 5+ accounts share a device fingerprint, all are flagged.
+Each Android device has a unique Android ID per app install. A fraud ring using a small number of rooted or emulated devices will produce multiple accounts sharing the same Android ID or device fingerprint. We cross-reference Android IDs at claim time — if 5+ accounts share a device fingerprint, all are flagged for review.
 
 **GPS Scatter Analysis**
-In a real flood, 500 workers are stationary at their own homes — GPS coordinates are spread across the zone. In a fraud ring, GPS coordinates cluster unnaturally at a small number of points or follow identical movement patterns before going stationary. We run a spatial scatter check: if claim coordinates show abnormal clustering (density > 3 standard deviations above zone baseline), the entire cluster is flagged for manual review — not auto-rejected — to avoid punishing genuine workers caught in the same area.
+In a real flood, 500 workers are stationary at their own homes — GPS coordinates are spread naturally across the zone. In a fraud ring, coordinates cluster unnaturally at a small number of points, or multiple devices show identical GPS trails before going stationary. We run a spatial scatter check: if claim coordinates show abnormal clustering (density > 3 standard deviations above zone baseline), the entire cluster is flagged for manual review — not auto-rejected — to avoid punishing genuine workers in the same area.
 
 **Claim Velocity Check**
-Normal claim rate per zone per event follows a predictable distribution based on historical data. If claim volume exceeds 2x the historical max for that zone and event type within 1 hour of trigger, a circuit breaker activates — payouts pause, manual review queue opens, and the operations team is alerted.
+Normal claim rate per zone per event follows a predictable distribution based on historical data. If claim volume exceeds 2x the historical maximum for that zone and event type within 1 hour of trigger, a circuit breaker activates — payouts pause, manual review queue opens, and the operations team is alerted.
 
 ### Layer 3 — Honest Worker Protection
 
 The key design principle: **flag aggressively, auto-reject conservatively.**
 
-- Individual GPS spoof detected → auto-reject (clear technical signal)
-- Emulator detected → auto-reject (clear technical signal)
+- Individual GPS spoof detected (mock flag or teleportation) → auto-reject (clear technical signal)
+- Emulator detected at onboarding → block permanently (clear technical signal)
+- Accelerometer mismatch → auto-reject (clear technical signal)
 - Ring clustering detected → flag for manual review, NOT auto-reject
 - Circuit breaker triggered → pause payouts, review within 4 hours, genuine workers paid retroactively
 
@@ -225,7 +230,9 @@ Genuine workers caught in a mass flag are never permanently denied. Manual revie
 
 | Threat | Detection Method | Response |
 |---|---|---|
-| Individual GPS spoof | Mock location flag + accelerometer mismatch | Auto-reject |
+| Mock location spoofing | `isFromMockProvider()` flag | Auto-reject |
+| GPS teleportation | Implied speed check between readings | Auto-reject |
+| Sensor mismatch | Accelerometer vs GPS velocity cross-check | Auto-reject |
 | Emulator accounts | Build fingerprint + sensor signature | Block at onboarding |
 | Coordinated ring | Account creation clustering + Android ID dedup | Flag for review |
 | Mass fake claims | GPS scatter analysis + claim velocity circuit breaker | Pause + manual review |
