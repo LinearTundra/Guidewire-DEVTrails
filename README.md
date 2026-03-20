@@ -374,8 +374,7 @@ Justification:
 | Payments | Razorpay / UPI | Per-transaction fee |
 
 ### Infrastructure
-- **Cloud:** AWS / GCP (TBD)
-- **CI/CD:** GitHub Actions
+- **Hosting:** Railway / Render / AWS / Self-hosted via ngrok (TBD)
 
 ---
 
