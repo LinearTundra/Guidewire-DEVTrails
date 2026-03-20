@@ -165,7 +165,7 @@ When a trigger fires, the following checks run automatically:
 All checks pass → auto payout. Any flag → manual review queue.
 
 ### 3. Zone Risk Scoring (ML)
-- Heatmap of each city built from historical IMD, NDMA, and traffic data
+- Risk score map of each city built from historical IMD, NDMA, and traffic data
 - Updated monthly
 - Drives premium zone classification
 
@@ -181,60 +181,53 @@ A genuine mass flood event and a coordinated fraud ring look identical at the su
 ### Layer 1 — Individual GPS Spoofing Detection
 
 **Mock Location Flag**
-Android exposes `LocationManagerCompat.isMockLocationEnabled()` on every GPS reading. Any reading flagged as mocked is rejected immediately and the claim is auto-flagged for manual review. This catches the majority of casual spoofing attempts.
+Android exposes `LocationManagerCompat.isMockLocationEnabled()` on every GPS reading. Any reading flagged as mocked is sent to manual review. This catches the majority of casual spoofing attempts. Note: mock flag alone is not grounds for auto-rejection as legitimate navigation apps running simultaneously can trigger false positives. Confirmed only when combined with other signals.
 
 **GPS Teleportation Detection**
-Real GPS moves gradually. Spoofed GPS snaps instantly. If a worker's last known coordinate and their new coordinate imply a physically impossible speed — for example jumping from Delhi to a flood zone in Tamil Nadu in 30 seconds — that is an immediate spoof signal. We calculate implied speed between consecutive GPS readings. Implied speed > 200km/h → flag.
+Real GPS moves gradually. Spoofed GPS snaps instantly. If consecutive GPS readings imply a physically impossible speed — for example jumping from Delhi to a flood zone in Tamil Nadu in 30 seconds — that is a hard spoof signal with no legitimate explanation. Implied speed > 200km/h → auto-reject.
 
 **Accelerometer Cross-Check**
-Spoofing GPS to appear stationary at home is easy. Faking the sensors is not. If a worker claims they were stranded at home but the accelerometer and gyroscope show real physical movement during the claim window — the phone is physically moving while GPS reports it as stationary. Real movement on sensors + stationary GPS = spoof signal. We cross-check GPS reported velocity against accelerometer data on every reading during the claim window. Mismatch → flag.
+Spoofing GPS coordinates is easy. Faking physical sensors is not. If the accelerometer and gyroscope show real movement during the claim window while GPS reports the device as stationary, the phone is physically moving while pretending not to be. Real sensor movement + stationary GPS = auto-reject. Mock flag + accelerometer mismatch together = auto-reject with no manual review needed.
 
 **Emulator Detection**
-Sophisticated fraud rings run fake accounts on Android emulators. Emulators have detectable signatures:
-- Unusual build fingerprints (generic manufacturer strings)
-- Missing or non-responsive sensors (no real accelerometer data)
-- Identical hardware specs across supposedly different devices
-
-Any device matching emulator signatures is flagged at onboarding and blocked from claims entirely.
+Fraud rings often run fake accounts on Android emulators. Emulators have detectable signatures — unusual build fingerprints, missing or non-responsive sensors, and identical hardware specs across supposedly different devices. Any device matching emulator signatures is blocked at onboarding entirely.
 
 ### Layer 2 — Fraud Ring Detection (Coordinated Attack)
 
 **Account Creation Clustering**
-500 genuine workers onboard gradually over weeks from different devices, different IPs, at different times. A fraud ring bulk-creates accounts before a known high-risk event. We flag:
-- 10+ accounts created within a 24-hour window from the same or nearby IP ranges
-- Accounts with identical or near-identical onboarding timestamps
-- Multiple accounts selecting the same zone + plan + UPI prefix combination at signup
+Genuine workers onboard gradually over weeks from different devices, IPs, and times. A fraud ring bulk-creates accounts before a known high-risk event. We flag accounts when 10+ are created within a 24-hour window from nearby IP ranges, onboarding timestamps are near-identical, or multiple accounts select the same zone + plan + UPI prefix combination at signup.
 
 **Android ID Clustering**
-Each Android device has a unique Android ID per app install. A fraud ring using a small number of rooted or emulated devices will produce multiple accounts sharing the same Android ID or device fingerprint. We cross-reference Android IDs at claim time — if 5+ accounts share a device fingerprint, all are flagged for review.
+Each Android device has a unique Android ID per app install. A fraud ring using rooted or emulated devices produces multiple accounts sharing the same fingerprint. If 5+ accounts share a device fingerprint at claim time, all are flagged for review.
 
 **GPS Scatter Analysis**
-In a real flood, 500 workers are stationary at their own homes — GPS coordinates are spread naturally across the zone. In a fraud ring, coordinates cluster unnaturally at a small number of points, or multiple devices show identical GPS trails before going stationary. We run a spatial scatter check: if claim coordinates show abnormal clustering (density > 3 standard deviations above zone baseline), the entire cluster is flagged for manual review — not auto-rejected — to avoid punishing genuine workers in the same area.
+In a real flood, 500 workers are stationary at their own homes — coordinates spread naturally across the zone. In a fraud ring, coordinates cluster unnaturally at a small number of points or devices show identical GPS trails before going stationary. If claim coordinate density exceeds 3 standard deviations above the zone baseline, the cluster is flagged for manual review — not auto-rejected — to avoid punishing genuine workers.
 
 **Claim Velocity Check**
-Normal claim rate per zone per event follows a predictable distribution based on historical data. If claim volume exceeds 2x the historical maximum for that zone and event type within 1 hour of trigger, a circuit breaker activates — payouts pause, manual review queue opens, and the operations team is alerted.
+If claim volume exceeds 2x the historical maximum for a zone and event type within 1 hour of trigger, a circuit breaker activates — payouts pause, manual review queue opens, and the operations team is alerted.
 
 ### Layer 3 — Honest Worker Protection
 
 The key design principle: **flag aggressively, auto-reject conservatively.**
 
-- Individual GPS spoof detected (mock flag or teleportation) → auto-reject (clear technical signal)
-- Emulator detected at onboarding → block permanently (clear technical signal)
-- Accelerometer mismatch → auto-reject (clear technical signal)
-- Ring clustering detected → flag for manual review, NOT auto-reject
-- Circuit breaker triggered → pause payouts, review within 4 hours, genuine workers paid retroactively
-
-Genuine workers caught in a mass flag are never permanently denied. Manual review resolves within 4 hours. Verified genuine claims are paid with a ₹50 inconvenience credit added.
+- GPS teleportation detected → auto-reject
+- Accelerometer mismatch detected → auto-reject
+- Mock flag + any secondary signal → auto-reject
+- Mock flag alone → manual review
+- Emulator detected at onboarding → permanent block
+- Ring clustering detected → manual review, never auto-reject
+- Circuit breaker triggered → payouts paused, reviewed within 4 hours, genuine workers paid retroactively with ₹50 inconvenience credit
 
 ### Summary Defense Stack
 
 | Threat | Detection Method | Response |
 |---|---|---|
-| Mock location spoofing | `isFromMockProvider()` flag | Auto-reject |
-| GPS teleportation | Implied speed check between readings | Auto-reject |
-| Sensor mismatch | Accelerometer vs GPS velocity cross-check | Auto-reject |
+| Mock location spoofing | `isFromMockProvider()` flag | Flag for review |
+| Mock + secondary signal | Mock flag + accelerometer or teleportation | Auto-reject |
+| GPS teleportation | Implied speed > 200km/h between readings | Auto-reject |
+| Sensor mismatch | Accelerometer movement + stationary GPS | Auto-reject |
 | Emulator accounts | Build fingerprint + sensor signature | Block at onboarding |
-| Coordinated ring | Account creation clustering + Android ID dedup | Flag for review |
+| Coordinated ring | Account clustering + Android ID dedup | Flag for review |
 | Mass fake claims | GPS scatter analysis + claim velocity circuit breaker | Pause + manual review |
 | Fake identity | Aadhaar KYC + linked SIM dedup (IDfy) | Block at onboarding |
 
