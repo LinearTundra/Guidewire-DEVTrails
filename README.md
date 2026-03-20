@@ -165,7 +165,7 @@ When a trigger fires, the following checks run automatically:
 All checks pass → auto payout. Any flag → manual review queue.
 
 ### 3. Zone Risk Scoring (ML)
-- Heatmap of each city built from historical IMD, NDMA, and traffic data
+- Risk score map of each city built from historical IMD, NDMA, and traffic data
 - Updated monthly
 - Drives premium zone classification
 
@@ -176,58 +176,58 @@ All checks pass → auto payout. Any flag → manual review queue.
 > **Market Crash Event Response:** 500 delivery partners. Fake GPS. Real payouts. A coordinated fraud ring just drained a platform's liquidity pool. Here is how GigShield fights back.
 
 ### The Core Challenge
-A genuine mass flood event and a coordinated fraud ring look identical at the surface level — hundreds of workers in the same zone, all inactive at the same time. Zone-level clustering alone cannot distinguish them. Timing cannot distinguish them because our system auto-triggers simultaneously. We need deeper signals.
+A genuine mass flood event and a coordinated fraud ring look identical at the surface level — hundreds of workers in the same zone, all inactive at the same time. Zone-level clustering alone cannot distinguish them. Timing cannot distinguish them because our system auto-triggers simultaneously for everyone in the affected zone. We need deeper signals.
 
 ### Layer 1 — Individual GPS Spoofing Detection
 
 **Mock Location Flag**
-Android exposes `LocationManagerCompat.isMockLocationEnabled()` on every GPS reading. Any reading flagged as mocked is rejected immediately. The claim is auto-flagged for manual review.
+Android exposes `LocationManagerCompat.isMockLocationEnabled()` on every GPS reading. Any reading flagged as mocked is sent to manual review. This catches the majority of casual spoofing attempts. Note: mock flag alone is not grounds for auto-rejection as legitimate navigation apps running simultaneously can trigger false positives. Confirmed only when combined with other signals.
+
+**GPS Teleportation Detection**
+Real GPS moves gradually. Spoofed GPS snaps instantly. If consecutive GPS readings imply a physically impossible speed — for example jumping from Delhi to a flood zone in Tamil Nadu in 30 seconds — that is a hard spoof signal with no legitimate explanation. Implied speed > 200km/h → auto-reject.
 
 **Accelerometer Cross-Check**
-A spoofer can fake GPS coordinates but cannot fake physical stillness. If GPS reports movement through a flooded street but the accelerometer shows zero motion — that is a spoof signal. We cross-check GPS velocity against accelerometer and gyroscope data on every reading. Mismatch → flag.
+Spoofing GPS coordinates is easy. Faking physical sensors is not. If the accelerometer and gyroscope show real movement during the claim window while GPS reports the device as stationary, the phone is physically moving while pretending not to be. Real sensor movement + stationary GPS = auto-reject. Mock flag + accelerometer mismatch together = auto-reject with no manual review needed.
 
 **Emulator Detection**
-Sophisticated fraud rings run fake accounts on Android emulators. Emulators have detectable signatures:
-- Unusual build fingerprints (generic manufacturer strings)
-- Missing or non-responsive sensors (no real accelerometer data)
-- Identical hardware specs across supposedly different devices
-Any device matching emulator signatures is flagged at onboarding and blocked from claims.
+Fraud rings often run fake accounts on Android emulators. Emulators have detectable signatures — unusual build fingerprints, missing or non-responsive sensors, and identical hardware specs across supposedly different devices. Any device matching emulator signatures is blocked at onboarding entirely.
 
 ### Layer 2 — Fraud Ring Detection (Coordinated Attack)
 
 **Account Creation Clustering**
-500 genuine workers onboard gradually over weeks. A fraud ring bulk-creates accounts before a known high-risk event. We flag:
-- 10+ accounts created within a 24-hour window from the same or nearby IP ranges
-- Accounts with identical or near-identical onboarding timestamps
-- Multiple accounts selecting the same zone + plan + UPI prefix combination at signup
+Genuine workers onboard gradually over weeks from different devices, IPs, and times. A fraud ring bulk-creates accounts before a known high-risk event. We flag accounts when 10+ are created within a 24-hour window from nearby IP ranges, onboarding timestamps are near-identical, or multiple accounts select the same zone + plan + UPI prefix combination at signup.
 
 **Android ID Clustering**
-Each Android device has a unique Android ID per app install. A fraud ring using a small number of rooted or emulated devices will produce multiple accounts sharing the same Android ID or device fingerprint. We cross-reference Android IDs at claim time — if 5+ accounts share a device fingerprint, all are flagged.
+Each Android device has a unique Android ID per app install. A fraud ring using rooted or emulated devices produces multiple accounts sharing the same fingerprint. If 5+ accounts share a device fingerprint at claim time, all are flagged for review.
 
 **GPS Scatter Analysis**
-In a real flood, 500 workers are stationary at their own homes — GPS coordinates are spread across the zone. In a fraud ring, GPS coordinates cluster unnaturally at a small number of points or follow identical movement patterns before going stationary. We run a spatial scatter check: if claim coordinates show abnormal clustering (density > 3 standard deviations above zone baseline), the entire cluster is flagged for manual review — not auto-rejected — to avoid punishing genuine workers caught in the same area.
+In a real flood, 500 workers are stationary at their own homes — coordinates spread naturally across the zone. In a fraud ring, coordinates cluster unnaturally at a small number of points or devices show identical GPS trails before going stationary. If claim coordinate density exceeds 3 standard deviations above the zone baseline, the cluster is flagged for manual review — not auto-rejected — to avoid punishing genuine workers.
 
 **Claim Velocity Check**
-Normal claim rate per zone per event follows a predictable distribution based on historical data. If claim volume exceeds 2x the historical max for that zone and event type within 1 hour of trigger, a circuit breaker activates — payouts pause, manual review queue opens, and the operations team is alerted.
+If claim volume exceeds 2x the historical maximum for a zone and event type within 1 hour of trigger, a circuit breaker activates — payouts pause, manual review queue opens, and the operations team is alerted.
 
 ### Layer 3 — Honest Worker Protection
 
 The key design principle: **flag aggressively, auto-reject conservatively.**
 
-- Individual GPS spoof detected → auto-reject (clear technical signal)
-- Emulator detected → auto-reject (clear technical signal)
-- Ring clustering detected → flag for manual review, NOT auto-reject
-- Circuit breaker triggered → pause payouts, review within 4 hours, genuine workers paid retroactively
-
-Genuine workers caught in a mass flag are never permanently denied. Manual review resolves within 4 hours. Verified genuine claims are paid with a ₹50 inconvenience credit added.
+- GPS teleportation detected → auto-reject
+- Accelerometer mismatch detected → auto-reject
+- Mock flag + any secondary signal → auto-reject
+- Mock flag alone → manual review
+- Emulator detected at onboarding → permanent block
+- Ring clustering detected → manual review, never auto-reject
+- Circuit breaker triggered → payouts paused, reviewed within 4 hours, genuine workers paid retroactively with ₹50 inconvenience credit
 
 ### Summary Defense Stack
 
 | Threat | Detection Method | Response |
 |---|---|---|
-| Individual GPS spoof | Mock location flag + accelerometer mismatch | Auto-reject |
+| Mock location spoofing | `isFromMockProvider()` flag | Flag for review |
+| Mock + secondary signal | Mock flag + accelerometer or teleportation | Auto-reject |
+| GPS teleportation | Implied speed > 200km/h between readings | Auto-reject |
+| Sensor mismatch | Accelerometer movement + stationary GPS | Auto-reject |
 | Emulator accounts | Build fingerprint + sensor signature | Block at onboarding |
-| Coordinated ring | Account creation clustering + Android ID dedup | Flag for review |
+| Coordinated ring | Account clustering + Android ID dedup | Flag for review |
 | Mass fake claims | GPS scatter analysis + claim velocity circuit breaker | Pause + manual review |
 | Fake identity | Aadhaar KYC + linked SIM dedup (IDfy) | Block at onboarding |
 
@@ -271,50 +271,50 @@ Genuine workers caught in a mass flag are never permanently denied. Manual revie
 
 ### Terms & Conditions
 
-**1. Eligibility**
-1.1 Policyholder must be an active gig delivery partner on at least one registered platform.
-1.2 Valid Aadhaar-based KYC must be completed at onboarding.
-1.3 GigShield mobile app must remain installed and active throughout the policy period.
+**1. Eligibility**<br>
+1.1 Policyholder must be an active gig delivery partner on at least one registered platform.<br>
+1.2 Valid Aadhaar-based KYC must be completed at onboarding.<br>
+1.3 GigShield mobile app must remain installed and active throughout the policy period.<br>
 
-**2. Premium & Payment**
-2.1 Premium is charged on a strictly weekly basis, debited every Monday at 12:00 AM IST.
-2.2 If the weekly premium payment fails, coverage lapses immediately for that week.
-2.3 Premium amounts are dynamic and may be revised each week based on the ML risk model, communicated at least 24 hours before debit.
+**2. Premium & Payment**<br>
+2.1 Premium is charged on a strictly weekly basis, debited every Monday at 12:00 AM IST.<br>
+2.2 If the weekly premium payment fails, coverage lapses immediately for that week.<br>
+2.3 Premium amounts are dynamic and may be revised each week based on the ML risk model, communicated at least 24 hours before debit.<br>
 
-**3. Coverage & Payouts**
-3.1 GigShield provides parametric income protection only.
-3.2 Full day payout (1/7th of covered weekly earnings) triggered when GPS inactivity confirmed for 6+ hours.
-3.3 Partial day payout (proportional) triggered when GPS shows reduced movement of 2–5 hours.
-3.4 Total payouts capped at plan's maximum weekly payout.
-3.5 Payout transferred to UPI within 24 hours of trigger verification.
+**3. Coverage & Payouts**<br>
+3.1 GigShield provides parametric income protection only.<br>
+3.2 Full day payout (1/7th of covered weekly earnings) triggered when GPS inactivity confirmed for 6+ hours.<br>
+3.3 Partial day payout (proportional) triggered when GPS shows reduced movement of 2–5 hours.<br>
+3.4 Total payouts capped at plan's maximum weekly payout.<br>
+3.5 Payout transferred to UPI within 24 hours of trigger verification.<br>
 
-**4. Waiting Period**
-4.1 Mandatory 2-week waiting period from first policy activation.
-4.2 Exception: flood and cyclone triggers have 1-week waiting period.
+**4. Waiting Period**<br>
+4.1 Mandatory 2-week waiting period from first policy activation.<br>
+4.2 Exception: flood and cyclone triggers have 1-week waiting period.<br>
 
 **5. Exclusions**
-- Health, medical, or hospitalisation expenses
-- Life insurance or death benefits
-- Accident, injury, or disability claims
-- Vehicle repair, damage, or theft
-- Income loss due to personal reasons
-- Platform-side issues (app downtime, account suspension)
-- Pre-planned events announced > 48 hours in advance
+- Health, medical, or hospitalisation expenses<br>
+- Life insurance or death benefits<br>
+- Accident, injury, or disability claims<br>
+- Vehicle repair, damage, or theft<br>
+- Income loss due to personal reasons<br>
+- Platform-side issues (app downtime, account suspension)<br>
+- Pre-planned events announced > 48 hours in advance<br>
 
-**6. Fraud & Misrepresentation**
-6.1 False zone information at signup = immediate cancellation without refund.
-6.2 GPS spoofing detected = permanent ban and claim rejection.
-6.3 Multiple accounts under same Aadhaar = all policies cancelled.
-6.4 GigShield reserves the right to flag any claim for manual review if anomaly detection raises a fraud signal.
+**6. Fraud & Misrepresentation**<br>
+6.1 False zone information at signup = immediate cancellation without refund.<br>
+6.2 GPS spoofing detected = permanent ban and claim rejection.<br>
+6.3 Multiple accounts under same Aadhaar = all policies cancelled.<br>
+6.4 GigShield reserves the right to flag any claim for manual review if anomaly detection raises a fraud signal.<br>
 
-**7. Claim Process**
-7.1 Fully automated — no manual filing required.
-7.2 Payout dispatched within 24 hours of clean fraud check.
-7.3 Flagged claims resolved within 72 hours.
+**7. Claim Process**<br>
+7.1 Fully automated — no manual filing required.<br>
+7.2 Payout dispatched within 24 hours of clean fraud check.<br>
+7.3 Flagged claims resolved within 72 hours.<br>
 
-**8. Governing Law**
-8.1 Governed by laws of India. Jurisdiction: Delhi.
-8.2 This is a hackathon prototype and does not constitute a legally binding insurance contract.
+**8. Governing Law**<br>
+8.1 Governed by laws of India. Jurisdiction: Delhi.<br>
+8.2 This is a hackathon prototype and does not constitute a legally binding insurance contract.<br>
 
 ---
 
@@ -374,8 +374,7 @@ Justification:
 | Payments | Razorpay / UPI | Per-transaction fee |
 
 ### Infrastructure
-- **Cloud:** AWS / GCP (TBD)
-- **CI/CD:** GitHub Actions
+- **Hosting:** Railway / Render / AWS / Self-hosted via ngrok (TBD)
 
 ---
 
@@ -409,6 +408,6 @@ This platform explicitly **does not cover:**
 
 ## 🔗 Repository
 
-**Team:** AFK
-**Team Leader:** Sarthak Kalyani
+**Team:** AFK <br>
+**Team Leader:** Sarthak Kalyani <br>
 **Members:** Sachin Bisht, Sahil Vishwakarma, Saket Kumar, Samdarsh Mahajan
