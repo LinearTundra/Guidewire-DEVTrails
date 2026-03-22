@@ -141,7 +141,6 @@ class Policies(BaseModel):
         waiting_period_complete: Whether 2-week waiting period has passed
         streak_week: Worker streak count at time of policy creation
     """
-    policy_id: str
     worker_id: str
     plan: Plan
     weekly_premium: float
@@ -172,7 +171,6 @@ class Claims(BaseModel):
         created_at: UTC timestamp of claim creation
         resolved_at: UTC timestamp of resolution, None until terminal status reached
     """
-    claim_id: str
     worker_id: str
     policy_id: str
     trigger_event_id: str
@@ -204,7 +202,6 @@ class TriggerEvents(BaseModel):
         is_active: Whether the event is currently ongoing
         affected_workers: List of worker_ids operating in this zone
     """
-    event_id: str
     event_type: EventType
     source: str
     state: str

@@ -1,4 +1,4 @@
-from Database import db
+from database.Database import db
 from models import Worker, Plan
 from typing import Optional
 from bson import ObjectId

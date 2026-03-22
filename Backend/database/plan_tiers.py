@@ -1,6 +1,5 @@
 from database.Database import db
-from models import PlanTiers
-from constants import Plan, EventType
+from constants import Plan
 
 
 async def get_all_plan_tiers() -> list[dict]:

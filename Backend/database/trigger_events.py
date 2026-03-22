@@ -1,4 +1,3 @@
-# trigger_events.py
 from database.Database import db
 from models import TriggerEvents
 from constants import EventType
