@@ -159,10 +159,13 @@ When a trigger fires, the following checks run automatically:
 |---|---|---|
 | Was trigger real? | IMD/NDMA/AQICN API cross-verify | No official alert found |
 | Was worker inactive? | GPS history during claimed window | Movement detected in city |
+| Order history check | Platform API partnership / synthetic data in hackathon | Active deliveries during claimed window |
 | Identity fraud | Aadhaar → linked SIM check (IDfy/TRAI) | Multiple accounts on same ID |
 | Claim pattern anomaly | ML anomaly detection on claim history | Unusual claim frequency |
 
 All checks pass → auto payout. Any flag → manual review queue.
+
+> **Note on order history:** In production, platform API partnerships enable real-time order history cross-referencing — a worker with active deliveries during a claimed disruption window is auto-rejected. For this hackathon, order history is simulated via synthetic data.
 
 ### 3. Zone Risk Scoring (ML)
 - Risk score map of each city built from historical IMD, NDMA, and traffic data
@@ -189,6 +192,9 @@ Real GPS moves gradually. Spoofed GPS snaps instantly. If consecutive GPS readin
 **Accelerometer Cross-Check**
 Spoofing GPS coordinates is easy. Faking physical sensors is not. If the accelerometer and gyroscope show real movement during the claim window while GPS reports the device as stationary, the phone is physically moving while pretending not to be. Real sensor movement + stationary GPS = auto-reject. Mock flag + accelerometer mismatch together = auto-reject with no manual review needed.
 
+**Order History Cross-Check**
+Where platform API partnerships exist, delivery activity logs are cross-referenced against the claim window. A worker with active order pickups or deliveries during a claimed disruption period is auto-rejected — genuine disruptions halt platform activity entirely. For this hackathon, order history is simulated via synthetic data.
+
 **Emulator Detection**
 Fraud rings often run fake accounts on Android emulators. Emulators have detectable signatures — unusual build fingerprints, missing or non-responsive sensors, and identical hardware specs across supposedly different devices. Any device matching emulator signatures is blocked at onboarding entirely.
 
@@ -214,6 +220,7 @@ The key design principle: **flag aggressively, auto-reject conservatively.**
 - Accelerometer mismatch detected → auto-reject
 - Mock flag + any secondary signal → auto-reject
 - Mock flag alone → manual review
+- Order history shows active deliveries during claimed window → auto-reject
 - Emulator detected at onboarding → permanent block
 - Ring clustering detected → manual review, never auto-reject
 - Circuit breaker triggered → payouts paused, reviewed within 4 hours, genuine workers paid retroactively with ₹50 inconvenience credit
@@ -226,6 +233,7 @@ The key design principle: **flag aggressively, auto-reject conservatively.**
 | Mock + secondary signal | Mock flag + accelerometer or teleportation | Auto-reject |
 | GPS teleportation | Implied speed > 200km/h between readings | Auto-reject |
 | Sensor mismatch | Accelerometer movement + stationary GPS | Auto-reject |
+| Active deliveries during claim | Order history cross-check (platform API / synthetic) | Auto-reject |
 | Emulator accounts | Build fingerprint + sensor signature | Block at onboarding |
 | Coordinated ring | Account clustering + Android ID dedup | Flag for review |
 | Mass fake claims | GPS scatter analysis + claim velocity circuit breaker | Pause + manual review |
