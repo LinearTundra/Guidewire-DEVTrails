@@ -42,13 +42,13 @@ class Database:
         """
         return self._client["gigshield"]
 
-    def close(self):
+    async def close(self):
         """
         Closes the MongoDB connection pool.
         Call this on application shutdown via FastAPI lifespan or try/finally in scripts.
         Never call this between requests.
         """
-        self._client.close()
+        await self._client.close()
 
 
 # module level singleton — import this directly, never instantiate Database manually

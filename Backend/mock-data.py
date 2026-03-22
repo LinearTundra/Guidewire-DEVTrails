@@ -230,7 +230,7 @@ async def seed():
         raise
 
     finally:
-        db.close()
+        await db.close()
 
 
 if __name__ == "__main__":
