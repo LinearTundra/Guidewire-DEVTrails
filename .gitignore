@@ -1,0 +1,55 @@
+# ── Python ───────────────────────────────────────────────────────────────────
+.env
+.env.*
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# ── Flutter / Dart ────────────────────────────────────────────────────────────
+*.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+*.iml
+pubspec.lock
+
+# ── Android ───────────────────────────────────────────────────────────────────
+*.keystore
+*.jks
+local.properties
+android/.gradle/
+android/app/release/
+
+# ── iOS ───────────────────────────────────────────────────────────────────────
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+*.xcworkspace
+
+# ── MongoDB / Database ────────────────────────────────────────────────────────
+*.db
+*.sqlite
+
+# ── IDEs ─────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
