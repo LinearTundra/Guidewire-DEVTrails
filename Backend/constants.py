@@ -33,6 +33,7 @@ class ClaimStatus(str, Enum):
     FLAGGED = "flagged"
     REJECTED = "rejected"
     MANUAL_REVIEW = "manual_review"
+    APPROVED = "approved"
 
 
 class ClaimType(str, Enum):

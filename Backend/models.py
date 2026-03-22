@@ -1,7 +1,46 @@
+from pydantic import BaseModel, Field, field_validator
 from datetime import datetime, timezone
-from pydantic import BaseModel, Field
 from typing import Optional, Union
-from enums import *
+from constants import *
+import bcrypt
+
+
+class Auth(BaseModel):
+    """
+    Stores authentication credentials for a worker.
+    Kept separate from Worker to isolate auth concerns from profile data.
+
+    Password is automatically bcrypt hashed when the Auth object is instantiated.
+    Pass the plain password to password — the class intercepts and hashes
+    it automatically via field_validator before storing.
+
+    Attributes:
+        worker_id: References Worker._id
+        username: Unique login identifier
+        password: Auto-hashed via bcrypt on instantiation — pass plain password
+        last_login: UTC timestamp of last successful login, None if never logged in
+    """
+    worker_id: str
+    mobile: str
+    email: Optional[str] = None
+    password: str    # pass plain password — hashed automatically on instantiation
+    last_login: Optional[datetime] = None
+
+    @field_validator("password")
+    @classmethod
+    def hash_password(cls, v: str) -> str:
+        """
+        Intercepts the plain password value before it is stored.
+        Hashes it using bcrypt with an auto-generated salt.
+
+        Args:
+            cls: The Auth class itself — required by Pydantic for field validators
+            v: The plain password string passed in by the caller
+
+        Returns:
+            bcrypt hash string containing version, cost, salt and hash
+        """
+        return bcrypt.hashpw(v.encode(), bcrypt.gensalt()).decode()
 
 class Worker(BaseModel):
     """
@@ -34,6 +73,7 @@ class Worker(BaseModel):
     upi_id: str
     plan: Plan
     mobile: str
+    email: Optional[str] = None
     aadhaar_masked: str
     streak: int
     kyc_verified: bool
