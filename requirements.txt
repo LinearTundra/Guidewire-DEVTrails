@@ -1,0 +1,17 @@
+annotated-types
+anyio
+asyncio
+bcrypt
+certifi
+dnspython
+dotenv
+h11
+httpcore
+httpx
+idna
+pydantic
+pydantic_core
+pymongo
+python-dotenv
+typing-inspection
+typing_extensions
