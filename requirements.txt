@@ -1,10 +1,14 @@
+annotated-doc
 annotated-types
 anyio
 asyncio
 bcrypt
 certifi
+click
+colorama
 dnspython
 dotenv
+fastapi
 h11
 httpcore
 httpx
@@ -13,5 +17,7 @@ pydantic
 pydantic_core
 pymongo
 python-dotenv
+starlette
 typing-inspection
 typing_extensions
+uvicorn

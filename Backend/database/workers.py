@@ -4,9 +4,10 @@ from typing import Optional
 from bson import ObjectId
 
 
-async def create_worker(worker: Worker) -> str:
+async def create_worker(worker: Worker) -> Optional[str]:
     """
-    Inserts a new worker document into the workers collection.
+    Inserts a new worker document into the workers collection
+    if the mobile number is not already inserted.
     
     Args:
         worker: Validated Worker pydantic model instance
@@ -14,6 +15,8 @@ async def create_worker(worker: Worker) -> str:
     Returns:
         Inserted document ID as string
     """
+    if await get_worker_by_mobile(worker.mobile) != None :
+        return None
     result = await db.get_database().workers.insert_one(worker.model_dump())
     return str(result.inserted_id)
 

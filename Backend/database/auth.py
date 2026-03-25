@@ -1,9 +1,14 @@
-from database.Database import db
-from models import Auth
-from typing import Optional
 from datetime import datetime, timezone
+from fastapi import HTTPException
+from database.Database import db
+from typing import Optional
+from models import Auth
 import bcrypt
 
+
+class AuthError(Exception) :
+    def __init__(self, message: str):
+        self.message = message
 
 async def create_auth(auth: Auth) -> str:
     """
@@ -39,28 +44,29 @@ async def get_auth(id: str) -> Optional[dict]:
         return await db.get_database().auth.find_one({"mobile": id})
 
 
-async def verify_password(id: str, plain_password: str) -> bool:
+async def login(id: str, plain_password: str) -> dict[str, str]:
     """
     Verifies a plain password against the stored bcrypt hash.
     Fetches the auth document and uses bcrypt.checkpw() to compare.
-    The bcrypt hash contains the salt so no separate salt lookup needed.
+    Updates the last login time.
     
     Args:
         id: Worker's email or mobile
         plain_password: Plain password string from login request
         
     Returns:
-        True if password matches, False if wrong password or user not found
+        worker_id if password matches, error if wrong password or user not found
     """
     auth = await get_auth(id)
     if not auth:
-        return False
+        raise AuthError(message="Invalid credentials")
     
     if not bcrypt.checkpw(plain_password.encode(), auth["password"].encode()) :
-        return False
+        raise AuthError(message="Invalid credentials")
     
     await update_last_login(auth["mobile"])
-    return True
+    return {"worker_id" : auth["worker_id"]}
+    
 
 
 async def update_last_login(mobile: str) -> bool:

@@ -71,11 +71,11 @@ class Worker(BaseModel):
     platform: list[str]
     weekly_earnings: float
     upi_id: str
-    plan: Plan
+    plan: Optional[Plan] = None
     mobile: str
     email: Optional[str] = None
     aadhaar_masked: str
-    streak: int
+    streak: int = 0
     kyc_verified: bool
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
