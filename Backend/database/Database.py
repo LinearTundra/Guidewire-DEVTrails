@@ -32,6 +32,14 @@ class Database:
         DB_URI = f"mongodb+srv://{DB_USER}:{DB_PASSWORD}@gigshield.u4mip69.mongodb.net/?appName=GigShield"
         self._client: AsyncMongoClient[Dict[str, Any]] = AsyncMongoClient(DB_URI)
 
+    async def create_gps_index(self) :
+        # if "gps_logs" not in self.get_database(). :
+        #     return
+        gps_logs = self.get_database().gps_logs
+        await gps_logs.create_index([("worker_id", 1), ("timestamp", 1)])
+        await gps_logs.create_index("timestamp", expireAfterSeconds=691000)
+        await gps_logs.create_index([("location", "2dsphere")])
+
     def get_database(self):
         """
         Returns the gigshield database instance.

@@ -35,7 +35,7 @@ async def get_claim(claim_id: str) -> Optional[dict]:
     return await db.get_database().claims.find_one({"_id": ObjectId(claim_id)})
 
 
-async def get_claims_by_worker(worker_id: str) -> list[dict]:
+async def get_claims_by_worker(worker_id: str, claimStatusList: list[ClaimStatus] = None) -> list[dict]:
     """
     Fetches all claims for a worker — current and historical.
     Used for payout history display in worker dashboard.
@@ -46,9 +46,30 @@ async def get_claims_by_worker(worker_id: str) -> list[dict]:
     Returns:
         List of claim documents ordered by created_at descending
     """
-    return await db.get_database().claims.find(
-        {"worker_id": worker_id}
-    ).sort("created_at", -1).to_list(length=None)
+    fields = {"worker_id": worker_id}
+    if claimStatusList :
+        fields["status"] = {"$in" : claimStatusList}
+    return await db.get_database().claims.find(fields).sort("created_at", -1).to_list(length=None)
+
+
+async def get_last_claim_by_worker(worker_id: str, claimStatusList: list[ClaimStatus] = None) -> list[dict]:
+    """
+    Fetches all claims for a worker — current and historical.
+    Used for payout history display in worker dashboard.
+    
+    Args:
+        worker_id: MongoDB ObjectId string of the worker
+        
+    Returns:
+        List of claim documents ordered by created_at descending
+    """
+    fields = {"worker_id": worker_id}
+    if claimStatusList :
+        fields["status"] = {"$in" : claimStatusList}
+    return await db.get_database().claims.find_one(
+        fields,
+        sort = [("created_at", -1)]
+    )
 
 
 async def get_claims_by_policy(policy_id: str) -> list[dict]:

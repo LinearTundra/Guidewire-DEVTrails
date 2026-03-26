@@ -1,11 +1,11 @@
 from pydantic import BaseModel, Field, field_validator
+from typing import Optional, Union, Literal, Any
 from datetime import datetime, timezone
-from typing import Optional, Union
 from constants import *
 import bcrypt
 
 
-class Auth(BaseModel):
+class Auth(BaseModel) :
     """
     Stores authentication credentials for a worker.
     Kept separate from Worker to isolate auth concerns from profile data.
@@ -42,7 +42,7 @@ class Auth(BaseModel):
         """
         return bcrypt.hashpw(v.encode(), bcrypt.gensalt()).decode()
 
-class Worker(BaseModel):
+class Worker(BaseModel) :
     """
     Represents a registered gig delivery worker on the platform.
     One document per worker. Claims and policies reference this via worker_id.
@@ -80,7 +80,7 @@ class Worker(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
-class ApiCache(BaseModel):
+class ApiCache(BaseModel) :
     """
     Stores API responses to avoid redundant external calls.
     Before hitting IMD/AQICN/NDMA, check here first.
@@ -103,7 +103,7 @@ class ApiCache(BaseModel):
     result: Union[str, dict]
 
 
-class PlanTiers(BaseModel):
+class PlanTiers(BaseModel) :
     """
     Static lookup table for the three coverage plan tiers.
     Only three documents — Basic, Standard, Premium.
@@ -123,7 +123,7 @@ class PlanTiers(BaseModel):
     covers: list[EventType]
 
 
-class Policies(BaseModel):
+class Policies(BaseModel) :
     """
     Represents a weekly insurance policy for a worker.
     One document per worker per week. New policy created each Monday.
@@ -153,7 +153,7 @@ class Policies(BaseModel):
     streak_week: int
 
 
-class Claims(BaseModel):
+class Claims(BaseModel) :
     """
     Represents an insurance claim created automatically when a trigger fires.
     Claims are never filed manually — always system-generated.
@@ -182,7 +182,7 @@ class Claims(BaseModel):
     resolved_at: Optional[datetime] = None
 
 
-class TriggerEvents(BaseModel):
+class TriggerEvents(BaseModel) :
     """
     Represents a disruption event detected by external API threshold crossing.
     Created automatically when IMD/AQICN/NDMA reports exceed defined thresholds.
@@ -216,7 +216,23 @@ class TriggerEvents(BaseModel):
     affected_workers: list[str]
 
 
-class GpsLogs(BaseModel):
+class Location(BaseModel) :
+    """
+    Stores location type and coordinates for GpsLogs.
+    
+    Attributes:
+        worker_id: References Worker._id
+        latitude: GPS latitude coordinate
+        longitude: GPS longitude coordinate
+        accuracy: GPS accuracy in meters — lower is better
+        timestamp: UTC timestamp of the reading
+        is_mocked: Whether reading was flagged by Android LocationManagerCompat.isMockLocationEnabled()
+    """
+    type: Literal["Point"] = "Point"
+    coordinates: list[float]
+
+
+class GpsLogs(BaseModel) :
     """
     Stores individual GPS readings for each active worker.
     High volume collection — one document per reading per worker.
@@ -231,8 +247,18 @@ class GpsLogs(BaseModel):
         is_mocked: Whether reading was flagged by Android LocationManagerCompat.isMockLocationEnabled()
     """
     worker_id: str
-    latitude: float
-    longitude: float
+    location: Location
     accuracy: float
     timestamp: datetime
     is_mocked: bool
+
+class ApiResponse(BaseModel) :
+    """
+    Response model for the backend.
+    
+    Attributes:
+        success: Whether the response was generated or an error occurred.
+        data: Response data that was generated, if any.
+    """
+    success: bool
+    data: Optional[Union[list, dict, str]] = None

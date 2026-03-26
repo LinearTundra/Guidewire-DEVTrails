@@ -10,6 +10,7 @@ async def lifespan(app: FastAPI):
     Manages application startup and shutdown.
     Database connection opens on startup and closes on shutdown.
     """
+    await db.create_gps_index()
     yield
     await db.close()
 
@@ -23,11 +24,11 @@ app = FastAPI(
 
 # ── Routers ───────────────────────────────────────────────────────────────────
 # from routes import workers, auth, policies, claims, webhooks
-from routes import workers, auth
-app.include_router(workers.router)
+from routes import workers, auth, claims
 app.include_router(auth.router)
+app.include_router(workers.router)
 # app.include_router(policies.router)
-# app.include_router(claims.router)
+app.include_router(claims.router)
 # app.include_router(webhooks.router)
 
 

@@ -104,23 +104,39 @@ async def get_mocked_logs_in_window(worker_id: str, start: datetime, end: dateti
     ).sort("timestamp", 1).to_list(length=None)
 
 
-async def delete_old_logs(worker_id: str, before: datetime) -> int:
+async def count_logs_in_window(worker_id: str, start: datetime, end: datetime) -> int:
     """
-    Deletes GPS logs older than a given datetime for a worker.
-    Used for periodic cleanup to keep the collection size manageable.
-    GPS logs older than 90 days are no longer needed for fraud detection.
+    Fetches the number of GPS logs of a worker within a time window.
     
     Args:
         worker_id: MongoDB ObjectId string
-        before: Delete logs with timestamp before this datetime
+        start: Window start datetime in UTC
+        end: Window end datetime in UTC
         
     Returns:
-        Number of deleted documents
+        Number of documents
     """
-    result = await db.get_database().gps_logs.delete_many(
+    return await db.get_database().gps_logs.count_documents(
         {
             "worker_id": worker_id,
-            "timestamp": {"$lt": before}    # $lt = <
+            "timestamp": {
+                "$gte": start,
+                "$lte": end
+            }
         }
     )
-    return result.deleted_count
+
+async def get_last_log(worker_id: str) -> dict | None:
+    '''
+    Fetches the last entered GPS log of a worker.
+    
+    Args:
+        worker_id: MongoDB ObjectId string
+        
+    Returns:
+        Last entered log or None
+    '''
+    return await db.get_database().gps_logs.find_one(
+        {"worker_id" : worker_id},
+        sort = [("timestamp", -1)]
+    )
