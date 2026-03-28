@@ -24,11 +24,12 @@ app = FastAPI(
 
 # ── Routers ───────────────────────────────────────────────────────────────────
 # from routes import workers, auth, policies, claims, webhooks
-from routes import workers, auth, claims
+from routes import workers, auth, claims, gps
 app.include_router(auth.router)
 app.include_router(workers.router)
-# app.include_router(policies.router)
+app.include_router(gps.router)
 app.include_router(claims.router)
+# app.include_router(policies.router)
 # app.include_router(webhooks.router)
 
 
