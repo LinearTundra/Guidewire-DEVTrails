@@ -50,6 +50,56 @@ ios/Flutter/Flutter.podspec
 Thumbs.db
 desktop.ini
 
-# ── Logs ─────────────────────────────────────────────────────────────────────
+# ── Logs ──────────────────────────────────────────────────────────────────────
 *.log
 logs/
+
+# ── Node / React Native ───────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ── Metro bundler cache ───────────────────────────────────────────────────────
+.expo/
+.expo-shared/
+.metro-cache/
+.cache/
+
+# ── React Native build outputs ────────────────────────────────────────────────
+android/app/build/
+android/build/
+android/.gradle/
+
+ios/build/
+ios/DerivedData/
+ios/Pods/
+
+# ── Xcode ─────────────────────────────────────────────────────────────────────
+*.xcworkspace
+*.xcuserstate
+*.xcuserdata/
+
+# ── Environment files ─────────────────────────────────────────────────────────
+.env
+.env.*
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+
+# ── Watchman ──────────────────────────────────────────────────────────────────
+.watchmanconfig
+
+# ── Temporary files ───────────────────────────────────────────────────────────
+*.tmp
+*.temp
+
+# ── VSCode React Native ───────────────────────────────────────────────────────
+.vscode/
+
+# ── Expo ──────────────────────────────────────────────────────────────────────
+.expo/
+.expo-shared/
+dist/
+web-build/
