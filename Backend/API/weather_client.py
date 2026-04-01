@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 from os import getenv
-from Backend.API.base_client import BaseClient
+from API.base_client import BaseClient
 
 load_dotenv()
 

@@ -1,4 +1,4 @@
-from Backend.API.base_client import BaseClient
+from API.base_client import BaseClient
 
 client = BaseClient()
 
