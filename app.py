@@ -1,13 +1,21 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 import joblib
+import os
 
+# -------- App Init --------
 app = FastAPI(title="GigShield API 🚀")
 
+# -------- Load Models (SAFE PATH) --------
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# -------- Load Models --------
-risk_model = joblib.load("risk_model.pkl")
-fraud_model = joblib.load("fraud_model.pkl")
+try:
+    risk_model = joblib.load(os.path.join(BASE_DIR, "risk_model.pkl"))
+    fraud_model = joblib.load(os.path.join(BASE_DIR, "fraud_model.pkl"))
+    print("✅ Models loaded successfully")
+except Exception as e:
+    print("❌ Model loading failed:", e)
+    raise e
 
 
 # -------- Input Schema --------
@@ -18,7 +26,7 @@ class PredictionInput(BaseModel):
     humidity: float = Field(..., ge=0, le=100)
     aqi: float = Field(..., ge=0)
 
-    # Worker behavior (REAL INPUT)
+    # Worker behavior
     hours_worked: float = Field(..., ge=0, le=24)
     distance_km: float = Field(..., ge=0)
     orders_completed: int = Field(..., ge=0)
@@ -40,13 +48,8 @@ class PredictionOutput(BaseModel):
     claim_status: str
 
 
-# -------- Feature Conversion (IMPORTANT) --------
+# -------- Feature Conversion --------
 def convert_to_model_features(data: PredictionInput):
-    """
-    Convert user input → 30 features (for fraud model)
-    NOTE: This is simplified mapping for demo
-    """
-
     features = [
         data.hours_worked,
         data.distance_km,
@@ -55,17 +58,22 @@ def convert_to_model_features(data: PredictionInput):
         data.claims_last_week
     ]
 
-    # pad remaining features (since original model expects 30)
+    # Pad to match model input (30 features)
     while len(features) < 30:
         features.append(0)
 
     return features
 
 
-# -------- Home Route --------
+# -------- Health Route --------
 @app.get("/")
 def home():
     return {"message": "GigShield API Running 🚀"}
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 
 # -------- Prediction Route --------
