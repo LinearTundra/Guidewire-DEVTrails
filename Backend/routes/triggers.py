@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from models import ApiResponse
 from constants import EventType
+from services import trigger_service
 
 
 """
@@ -23,5 +24,5 @@ router = APIRouter(prefix="/trigger")
     response_model=ApiResponse
 )
 async def simulate_trigger(event: EventType) :
-    # Add trigger event services
-    pass
+    await trigger_service.simulate_trigger(event)
+    return ApiResponse(success=True, data="Event Created")
