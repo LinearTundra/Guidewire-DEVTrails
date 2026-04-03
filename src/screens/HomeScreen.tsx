@@ -1,72 +1,143 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import Header from '../components/Header';
-import CustomCard from '../components/CustomCard';
 
-const [loading, setLoading] = useState(true);
 export default function HomeScreen({ setIsLoggedIn }: any) {
-  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
+  const [dashboard, setDashboard] = useState<any>(null);
 
   useEffect(() => {
-    fetchDashboardData();
+    fetchData();
   }, []);
 
-  const fetchDashboardData = async () => {
-  try {
-    setLoading(true);
+  const fetchData = async () => {
+    try {
+      setLoading(true);
 
-    // TODO: API INTEGRATION
-    // const response = await axios.get('/dashboard');
+      // =========================
+      // TODO: CONNECT BACKEND
+      // =========================
+      // const profileRes = await axios.get('/user/profile');
+      // const dashboardRes = await axios.get('/dashboard');
 
-    const mockData = {
-      earnings: 12000,
-      riskLevel: 'Medium',
-      weeklyPremium: 50,
-    };
+      // setProfile(profileRes.data);
+      // setDashboard(dashboardRes.data);
 
-    setData(mockData);
-  } catch (error) {
-    console.log(error);
-  } finally {
-    setLoading(false);
+      // =========================
+      // MOCK DATA (for now)
+      // =========================
+      const mockProfile = {
+        name: 'Raju Verma',
+        location: 'Lajpat Nagar, Delhi',
+      };
+
+      const mockDashboard = {
+        earnings: 5500,
+        premium: 38,
+        payout: 1200,
+        risk: 'High',
+        lastPayout: 785,
+        streak: 4,
+      };
+
+      setProfile(mockProfile);
+      setDashboard(mockDashboard);
+
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ Loading Screen
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ color: '#fff', textAlign: 'center', marginTop: 50 }}>
+          Loading...
+        </Text>
+      </View>
+    );
   }
-};
-if (loading) {
-  return (
-    <View style={styles.container}>
-      <Text style={{ color: '#fff', textAlign: 'center', marginTop: 50 }}>
-        Loading...
-      </Text>
-    </View>
-  );
-}
 
   return (
     <View style={styles.container}>
       <Header setIsLoggedIn={setIsLoggedIn} />
 
-      <ScrollView style={styles.content}>
-        <Text style={styles.heading}>Dashboard</Text>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        
+        {/* Greeting */}
+        <Text style={styles.greeting}>Good morning 👋</Text>
+        <Text style={styles.username}>{profile?.name}</Text>
+        <Text style={styles.location}>📍 {profile?.location}</Text>
 
-        <CustomCard>
-  <Text style={styles.cardTitle}>Weekly Earnings</Text>
-  <Text style={styles.cardValue}>₹{data?.earnings}</Text>
-</CustomCard>
+        {/* Active Policy */}
+        <View style={styles.policyCard}>
+          <Text style={styles.policyTitle}>ACTIVE POLICY</Text>
+          <Text style={styles.planName}>Standard Plan</Text>
+          <Text style={styles.policySub}>Coverage active</Text>
 
-<CustomCard>
-  <Text style={styles.cardTitle}>Risk Level</Text>
-  <Text style={styles.cardValue}>{data?.riskLevel}</Text>
-</CustomCard>
+          <View style={styles.row}>
+            <View>
+              <Text style={styles.smallLabel}>Weekly Premium</Text>
+              <Text style={styles.value}>₹{dashboard?.premium}</Text>
+            </View>
 
-<CustomCard>
-  <Text style={styles.cardTitle}>Weekly Premium</Text>
-  <Text style={styles.cardValue}>₹{data?.weeklyPremium}</Text>
-</CustomCard>
+            <View>
+              <Text style={styles.smallLabel}>Max Payout</Text>
+              <Text style={styles.value}>₹{dashboard?.payout}</Text>
+            </View>
+
+            <View>
+              <Text style={styles.smallLabel}>Policy ID</Text>
+              <Text style={styles.value}>GS-3847</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Risk Section */}
+        <Text style={styles.sectionTitle}>Zone Safety Score</Text>
+
+        <View style={styles.zoneCard}>
+          <Text style={styles.zoneTitle}>{profile?.location}</Text>
+          <Text style={styles.zoneSub}>Live risk data</Text>
+          <Text style={styles.riskBadge}>{dashboard?.risk} Risk</Text>
+        </View>
+
+        {/* Alert */}
+        <View style={styles.alertCard}>
+          <Text style={styles.alertTitle}>⚠️ Weather Alert</Text>
+          <Text style={styles.alertText}>
+            Monitoring your zone. Payout triggers automatically.
+          </Text>
+        </View>
+
+        {/* Weekly Stats */}
+        <Text style={styles.sectionTitle}>This Week</Text>
+
+        <View style={styles.statsRow}>
+          <View style={styles.statCard}>
+            <Text style={styles.value}>₹{dashboard?.earnings}</Text>
+            <Text style={styles.smallLabel}>Earnings Protected</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Text style={styles.value}>₹{dashboard?.lastPayout}</Text>
+            <Text style={styles.smallLabel}>Last Payout</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Text style={styles.value}>{dashboard?.streak} Wks</Text>
+            <Text style={styles.smallLabel}>Active Streak</Text>
+          </View>
+        </View>
+
       </ScrollView>
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -75,24 +146,107 @@ const styles = StyleSheet.create({
   content: {
     padding: 20,
   },
-  heading: {
+
+  greeting: { color: '#aaa' },
+
+  username: {
     color: '#fff',
     fontSize: 24,
+    fontWeight: 'bold',
+  },
+
+  location: {
+    color: '#4FC3F7',
     marginBottom: 20,
   },
-  card: {
-    backgroundColor: '#1C2230',
+
+  policyCard: {
+    backgroundColor: '#1E7C7C',
     padding: 20,
+    borderRadius: 20,
+    marginBottom: 20,
+  },
+
+  policyTitle: { color: '#A0E7E5', fontSize: 12 },
+
+  planName: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+
+  policySub: {
+    color: '#CFFFEF',
+    marginBottom: 15,
+  },
+
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+
+  smallLabel: {
+    color: '#ccc',
+    fontSize: 12,
+  },
+
+  value: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+
+  sectionTitle: {
+    color: '#fff',
+    fontSize: 18,
+    marginBottom: 10,
+  },
+
+  zoneCard: {
+    backgroundColor: '#1C2230',
+    padding: 15,
     borderRadius: 15,
     marginBottom: 15,
   },
-  cardTitle: {
-    color: '#aaa',
-    marginBottom: 5,
-  },
-  cardValue: {
+
+  zoneTitle: {
     color: '#fff',
-    fontSize: 18,
     fontWeight: 'bold',
+  },
+
+  zoneSub: {
+    color: '#aaa',
+  },
+
+  riskBadge: {
+    color: '#ff4d4d',
+    marginTop: 5,
+  },
+
+  alertCard: {
+    backgroundColor: '#2A0F0F',
+    padding: 15,
+    borderRadius: 15,
+    marginBottom: 20,
+  },
+
+  alertTitle: {
+    color: '#ff4d4d',
+    fontWeight: 'bold',
+  },
+
+  alertText: {
+    color: '#ccc',
+  },
+
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+
+  statCard: {
+    backgroundColor: '#1C2230',
+    padding: 15,
+    borderRadius: 15,
+    width: '30%',
   },
 });

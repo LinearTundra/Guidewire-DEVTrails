@@ -7,17 +7,27 @@ export default function OtpScreen({ route, navigation, setIsLoggedIn }: any) {
   const [otp, setOtp] = useState('');
 
   const handleVerify = async () => {
-    // TODO: Replace with backend API
-    // const response = await axios.post('/verify-otp', { phone, otp });
+  try {
+    // TODO: CONNECT BACKEND
+    // const res = await verifyOtp(phone, otp);
+    // const isNewUser = res.data.isNewUser;
 
-    if (otp === '1234') { // mock OTP
-      const user = { phone };
-      await AsyncStorage.setItem('user', JSON.stringify(user));
-      setIsLoggedIn(true);
+    const isNewUser = true; // MOCK (change later)
+
+    if (otp === '1234') {
+      if (isNewUser) {
+        navigation.navigate('SetupProfile');
+      } else {
+        await AsyncStorage.setItem('user', JSON.stringify({ phone }));
+        setIsLoggedIn(true);
+      }
     } else {
       alert('Invalid OTP');
     }
-  };
+  } catch (error) {
+    console.log(error);
+  }
+};
 
   return (
     <View style={styles.container}>
