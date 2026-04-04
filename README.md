@@ -308,6 +308,11 @@ The key design principle: **flag aggressively, auto-reject conservatively.**
 - Income loss due to personal reasons<br>
 - Platform-side issues (app downtime, account suspension)<br>
 - Pre-planned events announced > 48 hours in advance<br>
+- War, civil unrest, riots, or acts of terrorism<br>
+- Pandemic or epidemic declared by WHO or Government of India<br>
+- Government-imposed lockdowns, curfews, or economic sanctions not covered under social triggers<br>
+- Nuclear, biological, or chemical disasters<br>
+- Acts of God beyond the parametric triggers defined in this policy<br>
 
 **6. Fraud & Misrepresentation**<br>
 6.1 False zone information at signup = immediate cancellation without refund.<br>
@@ -326,9 +331,9 @@ The key design principle: **flag aggressively, auto-reject conservatively.**
 
 ---
 
-## 📱 Platform Choice — Mobile (Flutter)
+## 📱 Platform Choice — Mobile (React Native)
 
-GigShield is built as a **mobile-first Android/iOS app** using Flutter.
+GigShield is built as a **mobile-first Android/iOS app** using React Native.
 
 Justification:
 - Gig workers operate entirely on mobile — no access to desktops during work
@@ -362,7 +367,7 @@ Justification:
 ## 🔌 Tech Stack
 
 ### Mobile App
-- **Framework:** Flutter (Android + iOS, single codebase)
+- **Framework:** React Native (Android + iOS, single codebase)
 - **Background Services:** Flutter background fetch (GPS logging, push notifications)
 
 ### Backend
@@ -395,12 +400,16 @@ Major platforms (Zomato, Swiggy, Zepto) do not expose public APIs for gig worker
 ---
 
 ## 🚫 Exclusions
-
 This platform explicitly **does not cover:**
 - Health or medical expenses
-- Life insurance
+- Life insurance or death benefits
 - Accident or injury claims
 - Vehicle repair or damage
+- War, civil unrest, or acts of terrorism
+- Pandemic or epidemic declared events
+- Government-imposed lockdowns or economic sanctions
+- Nuclear, biological, or chemical disasters
+- Acts of God beyond covered parametric triggers
 
 ---
 
