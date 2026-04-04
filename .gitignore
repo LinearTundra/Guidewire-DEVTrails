@@ -1,42 +1,55 @@
-# dependencies
-node_modules/
-
-# Expo
-.expo/
+# ── Python ───────────────────────────────────────────────────────────────────
+.env
+.env.*
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
 dist/
-web-build/
-expo-env.d.ts
+build/
+.pytest_cache/
 
-# Native
-.kotlin/
-*.orig.*
+# ── Flutter / Dart ────────────────────────────────────────────────────────────
+*.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+*.iml
+pubspec.lock
+
+# ── Android ───────────────────────────────────────────────────────────────────
+*.keystore
 *.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
+local.properties
+android/.gradle/
+android/app/release/
 
-# Metro
-.metro-health-check*
+# ── iOS ───────────────────────────────────────────────────────────────────────
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+*.xcworkspace
 
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
+# ── MongoDB / Database ────────────────────────────────────────────────────────
+*.db
+*.sqlite
 
-# macOS
+# ── IDEs ─────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── OS ────────────────────────────────────────────────────────────────────────
 .DS_Store
-*.pem
+Thumbs.db
+desktop.ini
 
-# env
-.env*.local
-
-# typescript
-*.tsbuildinfo
-
-# generated native folders
-/frontend/android
-/frontend/ios
-
-# VS Code
-.vscode
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
