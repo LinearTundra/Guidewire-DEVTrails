@@ -2,6 +2,26 @@
 
 > Automated, instant income protection for India's platform delivery partners against weather, pollution, and disaster disruptions.
 
+> ⚡ TL;DR: Working prototype with onboarding flow, policy management, trigger simulation, and payout demo. Frontend uses mocked data; advanced fraud detection, real-time integrations, and full frontend-backend connectivity are planned for Phase 3.
+
+---
+
+## 📲 Try the App (APK)
+
+- Download APK: [GigShield Demo APK](https://drive.google.com/drive/folders/15jDSIe9b2D0wlW0QF7XZjc3xy2DplAWi?usp=sharing)
+- Platform: Android
+- Note: This is a hackathon prototype using mocked data (see Demo Instructions below)
+
+---
+
+## 🔗 Backend API (Demo)
+
+- API Docs (Swagger): [https://guidewire-devtrails.onrender.com/docs](https://guidewire-devtrails.onrender.com/docs)
+
+> ⚠️ Note: Hosted on Render free tier — initial request may take ~30–60 seconds due to cold start.
+
+> Note: This is a hackathon prototype. Some endpoints operate on mock/synthetic data, and full frontend-backend integration is planned for Phase 3.
+
 ---
 
 ## 📌 Problem Statement
@@ -74,16 +94,17 @@ Rationale: Food delivery riders are the largest and most vulnerable segment. The
 3. Base weekly premium set from risk factor
 4. ML model adjusts premium week-over-week as new data accumulates
 5. Worker pays weekly premium upfront (UPI/wallet debit)
-6. **2-week waiting period** applies before first claim eligibility (except flood/extreme rain — 1 week)
+6. **2-week waiting period** applies before first claim eligibility (except flood/extreme rain — 1 week; Waiting period logic defined but not enforced in prototype)
 
 ### Stage 3: Active Coverage
 1. Policy is live for 7 days from payment
 2. App runs in background (similar to WhatsApp background process)
-3. GPS data passively logged to build movement heatmap of worker's operating zones
+3. GPS data passively logged to build movement heatmap of worker's operating zones (GPS logs stored; heatmap generation planned)
 4. No action required from worker during this stage
 
 ### Stage 4: Trigger Monitoring
-The system polls external APIs every hour for each active worker's zone:
+In Production: The system polls external APIs every hour for each active worker's zone
+In Hackathon: Triggers are simulated by the frontend
 
 **Environmental Triggers**
 | Trigger Type | Data Source | Threshold |
@@ -121,7 +142,7 @@ When threshold is crossed:
 - No long-term commitment — worker can stop anytime
 - Premium range: ₹25–₹55 per week depending on zone risk tier
 
-**Premium = Base Rate × Zone Risk Factor × Coverage Multiplier**
+**ML model adjusts premium week-over-week as new data accumulates**
 
 | Zone Risk Tier | Description | Example Weekly Premium |
 |---|---|---|
@@ -151,8 +172,10 @@ When threshold is crossed:
 - Features: Zone flood frequency, average AQI, road closure incidents, seasonal patterns, worker's actual operating heatmap
 - Output: Adjusted weekly premium per worker per week
 - Cold start: New workers assigned city-level base premium, adjusted after 2 weeks of GPS data
+- Pre-trained models are served via API for risk and fraud scoring.
+- Retraining pipelines and real-time model updates are planned for Phase 3 and are not part of the current prototype.
 
-### 2. Fraud Detection (Rule-Based + ML)
+### 2. Fraud Detection (Planned — Phase 3)
 When a trigger fires, the following checks run automatically:
 
 | Check | Method | Flag if |
@@ -175,7 +198,8 @@ All checks pass → auto payout. Any flag → manual review queue.
 ---
 
 ## 🛡️ Adversarial Defense & Anti-Spoofing Strategy
-
+- Note: This section will be implemented in Phase 3
+  
 > **Market Crash Event Response:** 500 delivery partners. Fake GPS. Real payouts. A coordinated fraud ring just drained a platform's liquidity pool. Here is how GigShield fights back.
 
 ### The Core Challenge
@@ -341,7 +365,7 @@ Justification:
 - Push notifications for instant payout alerts are native to mobile
 - UPI payment integration is seamless on mobile
 - Aadhaar OTP and camera-based document upload works best on mobile
-- Flutter enables single codebase for Android + iOS
+- React Native enables single codebase for Android + iOS
 
 ---
 
@@ -368,7 +392,7 @@ Justification:
 
 ### Mobile App
 - **Framework:** React Native (Android + iOS, single codebase)
-- **Background Services:** Flutter background fetch (GPS logging, push notifications)
+- **Background Services:** React Native background fetch / Expo background tasks
 
 ### Backend
 - **Language:** Python (FastAPI)
@@ -410,6 +434,33 @@ This platform explicitly **does not cover:**
 - Government-imposed lockdowns or economic sanctions
 - Nuclear, biological, or chemical disasters
 - Acts of God beyond covered parametric triggers
+
+---
+
+## 🚧 Phase 2 Scope & Implementation Status
+
+This submission focuses on delivering a working prototype of core system flows. Some advanced components are intentionally scoped for Phase 3.
+
+### ✅ Implemented in Phase 2
+- User onboarding and KYC flow
+- Policy creation and management
+- Dynamic premium calculation (ML model via API)
+- Trigger simulation (weather, AQI, disruption events)
+- Automated claim creation and payout simulation
+- Worker and admin dashboards (basic)
+
+### ⚠️ Partially Implemented / Simulated
+- External API integrations (IMD, NDMA, AQI) are simulated where required
+- Order history and delivery activity use synthetic data
+- Instant payouts are demonstrated using test/sandbox environments
+- Frontend is currently operating on mocked data; full frontend-backend integration is pending
+
+### 🚀 Planned for Phase 3
+- Full fraud detection system (GPS spoofing, emulator detection, anomaly ML)
+- Real-time API integrations and live trigger ingestion
+- Full frontend-backend integration (real-time data sync and API connectivity)
+- Production-grade ML retraining pipelines
+- Payment gateway production integration (Razorpay/UPI live)
 
 ---
 
