@@ -1,0 +1,28 @@
+from fastapi import APIRouter
+from models import ApiResponse
+from constants import EventType
+from services import trigger_service
+
+
+"""
+Error Codes:
+    400 → Bad request (invalid input/format)
+    401 → Not logged in / invalid token
+    403 → Logged in but not allowed
+    404 → Not found
+    409 → Conflict (duplicate mobile, etc.)
+    422 → Validation error (FastAPI auto uses this)
+    500 → DB Failure
+"""
+
+
+router = APIRouter(prefix="/trigger")
+
+@router.get(
+    "/simulate",
+    summary="Simulate an event",
+    response_model=ApiResponse
+)
+async def simulate_trigger(event: EventType) :
+    await trigger_service.simulate_trigger(event)
+    return ApiResponse(success=True, data="Event Created")

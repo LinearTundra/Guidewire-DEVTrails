@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "GigShield",
+    "slug": "gigshield-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "icon": "./src/assets/icon.png",
+    "splash": {
+      "image": "./src/assets/splash.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#0B0F1A"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/icon.png",
+        "backgroundColor": "#0B0F1A"
+      },
+      "package": "com.sachin_bisht.gigshieldapp"
+    },
+    "web": {
+      "favicon": "./src/assets/icon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "12b815b3-e144-44bd-a6aa-d8b1b7f31fc4"
+      }
+    }
+  }
+}
