@@ -17,6 +17,10 @@
 ## 🔗 Backend API (Demo)
 
 - API Docs (Swagger): [https://guidewire-devtrails.onrender.com/docs](https://guidewire-devtrails.onrender.com/docs)
+- Demo Credentials
+  - Mobile : 9876543210
+  - Password : raju@123
+  - Worker ID : 69c02315a762ca801b7c810d
 
 > ⚠️ Note: Hosted on Render free tier — initial request may take ~30–60 seconds due to cold start.
 
