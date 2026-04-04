@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import Header from '../components/Header';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen({ setIsLoggedIn }: any) {
   const [loading, setLoading] = useState(true);
@@ -25,7 +26,7 @@ export default function HomeScreen({ setIsLoggedIn }: any) {
       // setDashboard(dashboardRes.data);
 
       // =========================
-      // MOCK DATA (for now)
+      // MOCK DATA
       // =========================
       const mockProfile = {
         name: 'Raju Verma',
@@ -43,7 +44,6 @@ export default function HomeScreen({ setIsLoggedIn }: any) {
 
       setProfile(mockProfile);
       setDashboard(mockDashboard);
-
     } catch (error) {
       console.log(error);
     } finally {
@@ -51,25 +51,27 @@ export default function HomeScreen({ setIsLoggedIn }: any) {
     }
   };
 
-  // ✅ Loading Screen
+  // ✅ LOADING SCREEN (FIXED)
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Text style={{ color: '#fff', textAlign: 'center', marginTop: 50 }}>
-          Loading...
-        </Text>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <Header setIsLoggedIn={setIsLoggedIn} />
+        <ScrollView contentContainerStyle={styles.content}>
+          <Text style={{ color: '#fff' }}>Loading...</Text>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
+  // ✅ MAIN SCREEN (FIXED)
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Header setIsLoggedIn={setIsLoggedIn} />
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         
         {/* Greeting */}
-        <Text style={styles.greeting}>Good morning 👋</Text>
+        <Text style={styles.greeting}>Hi 👋</Text>
         <Text style={styles.username}>{profile?.name}</Text>
         <Text style={styles.location}>📍 {profile?.location}</Text>
 
@@ -135,9 +137,11 @@ export default function HomeScreen({ setIsLoggedIn }: any) {
         </View>
 
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
+
+// ✅ STYLES (UNCHANGED)
 const styles = StyleSheet.create({
   container: {
     flex: 1,

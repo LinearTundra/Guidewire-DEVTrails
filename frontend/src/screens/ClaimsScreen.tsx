@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ClaimsScreen() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -39,7 +40,8 @@ export default function ClaimsScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+  <SafeAreaView style={styles.container}>
+    <ScrollView contentContainerStyle={{ padding: 20 }}>
       
       {/* Button */}
       <TouchableOpacity style={styles.button} onPress={simulateAlert}>
@@ -86,13 +88,13 @@ export default function ClaimsScreen() {
       )}
 
     </ScrollView>
-  );
+  </SafeAreaView>
+);
 }
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0B0F1A',
-    padding: 20,
   },
 
   button: {

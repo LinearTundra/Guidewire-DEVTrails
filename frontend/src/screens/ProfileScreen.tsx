@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ProfileScreen() {
   const [name, setName] = useState('Raju Verma');
@@ -48,7 +49,8 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+  <SafeAreaView style={styles.container}>
+    <ScrollView contentContainerStyle={{ padding: 20 }}>
       
       <Text style={styles.title}>Get Covered</Text>
       <Text style={styles.subtitle}>
@@ -99,7 +101,7 @@ export default function ProfileScreen() {
       {/* Plans */}
       <Text style={styles.label}>CHOOSE YOUR PLAN</Text>
 
-      {[
+      {[ 
         { name: 'Basic', price: 25 },
         { name: 'Standard', price: 38 },
         { name: 'Premium', price: 55 },
@@ -114,9 +116,7 @@ export default function ProfileScreen() {
         >
           <View>
             <Text style={styles.planName}>{p.name}</Text>
-            <Text style={styles.planDesc}>
-              Coverage plan
-            </Text>
+            <Text style={styles.planDesc}>Coverage plan</Text>
           </View>
 
           <Text style={styles.price}>₹{p.price}</Text>
@@ -137,13 +137,13 @@ export default function ProfileScreen() {
       </TouchableOpacity>
 
     </ScrollView>
-  );
+  </SafeAreaView>
+);
 }
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0B0F1A',
-    padding: 20,
   },
 
   title: {

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function PoliciesScreen() {
   const [policy, setPolicy] = useState<any>(null);
@@ -54,7 +55,8 @@ export default function PoliciesScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+  <SafeAreaView style={styles.container}>
+    <ScrollView contentContainerStyle={{ padding: 20 }}>
       
       {/* Header */}
       <Text style={styles.title}>My Policy</Text>
@@ -114,13 +116,13 @@ export default function PoliciesScreen() {
       ))}
 
     </ScrollView>
-  );
+  </SafeAreaView>
+);
 }
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0B0F1A',
-    padding: 20,
   },
 
   title: {
