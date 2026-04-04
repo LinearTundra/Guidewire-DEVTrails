@@ -423,6 +423,74 @@ This platform explicitly **does not cover:**
 
 ---
 
+
+## 📁 Repository Structure
+```
+Guidewire-DEVTrails/
+├── README.md
+├── .gitignore
+│
+├── Backend/
+│   ├── main.py                  # FastAPI entry point
+│   ├── models.py                # Pydantic models
+│   ├── constants.py             # Enums (Plan, ClaimStatus, EventType etc.)
+│   ├── requirements.txt
+│   ├── mock-data.py             # Database seeding script
+│   │
+│   ├── database/                # MongoDB CRUD operations
+│   │   ├── Database.py          # Connection singleton
+│   │   ├── workers.py
+│   │   ├── auth.py
+│   │   ├── policies.py
+│   │   ├── claims.py
+│   │   ├── plan_tiers.py
+│   │   ├── trigger_events.py
+│   │   ├── gps_logs.py
+│   │   └── api_cache.py
+│   │
+│   ├── routes/                  # FastAPI route handlers
+│   │   ├── auth.py              # Login, register, reset password
+│   │   ├── workers.py           # Worker profile endpoints
+│   │   ├── claims.py            # Claims fetch endpoints
+│   │   ├── policy.py            # Policy endpoints
+│   │   ├── plantiers.py         # Plan tier endpoints
+│   │   ├── premium.py           # Premium calculation
+│   │   ├── gps.py               # GPS log upload
+│   │   └── triggers.py          # Trigger simulation
+│   │
+│   ├── services/                # Business logic
+│   │   ├── claim_service.py     # Claim creation and bulk processing
+│   │   ├── trigger_service.py   # Trigger event handling
+│   │   ├── gps_service.py       # GPS inactivity checks
+│   │   ├── ml_service.py        # ML model integration
+│   │   └── worker_service.py
+│   │
+│   └── API/                     # External API clients
+│       ├── base_client.py
+│       ├── weather_client.py    # IMD integration
+│       ├── aqi_client.py        # AQICN integration
+│       ├── disaster_client.py   # NDMA SACHET integration
+│       └── tomorrow.py          # Tomorrow.io integration
+│
+├── frontend/                    # React Native (Expo) mobile app
+│   ├── App.tsx
+│   ├── src/
+│   │   ├── screens/             # App screens
+│   │   ├── components/          # Reusable components
+│   │   ├── navigation/          # Tab and stack navigation
+│   │   └── services/            # API service layer
+│   └── android/                 # Android build files
+│
+├── ml
+│   ├── app.py                   # ML model and api endpoint
+│   ├── Dockerfile
+│   ├── fraud_model.pkl
+│   ├── requirements.txt
+│   ├── risk_model.pkl
+│
+└── Phase1 Prototype/
+    └── gigshield-prototype.html # Phase 1 web prototype
+```
 ## 🔗 Repository
 
 **Team:** AFK <br>
