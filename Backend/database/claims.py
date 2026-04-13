@@ -168,3 +168,36 @@ async def resolve_claim(claim_id: str, status: ClaimStatus) -> bool:
         }
     )
     return result.modified_count > 0
+
+async def get_claims_by_trigger(trigger_id: str):
+    return await db.get_database().claims.find(
+        {"trigger_event_ids": {"$in": [trigger_id]}}
+    ).to_list(length=None)
+
+async def add_trigger_to_claim(claim_id: str, trigger_id: str):
+    return await db.get_database().claims.update_one(
+        {"_id": claim_id},
+        {
+            "$addToSet": {
+                "trigger_event_ids": trigger_id
+            }
+        }
+    )
+
+async def remove_trigger_from_claim(claim_id: str, trigger_id: str):
+    return await db.get_database().claims.update_one(
+        {"_id": claim_id},
+        {
+            "$pull": {
+                "trigger_event_ids": trigger_id
+            }
+        }
+    )
+
+async def get_active_claim_by_worker(worker_id: str) :
+    return await db.get_database().claims.find_one(
+        {
+            "worker_id" : worker_id,
+            "status" : {"$in" : [ClaimStatus.MONITORING, ClaimStatus.MANUAL_REVIEW, ClaimStatus.FLAGGED]}
+        }
+    )

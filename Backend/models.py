@@ -173,7 +173,7 @@ class Claims(BaseModel) :
     """
     worker_id: str
     policy_id: str
-    trigger_event_id: str
+    trigger_event_id: list[str]
     claim_amount: float
     claim_type: ClaimType
     status: ClaimStatus
