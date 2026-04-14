@@ -37,13 +37,16 @@ class PredictionInput(BaseModel):
     weekly_earning: float = Field(..., ge=0)
     hours_inactive: float = Field(..., ge=0, le=24)
 
+    # NEW → base price from backend
+    base_price: float = Field(..., ge=0)
+
 
 # -------- Output Schema --------
 class PredictionOutput(BaseModel):
     risk_score: float
     risk_level: str
     fraud_status: str
-    premium: int
+    premium: float   # changed from int → float
     payout: float
     claim_status: str
 
@@ -65,7 +68,7 @@ def convert_to_model_features(data: PredictionInput):
     return features
 
 
-# -------- Health Route --------
+# -------- Health Routes --------
 @app.get("/")
 def home():
     return {"message": "GigShield API Running 🚀"}
@@ -97,18 +100,19 @@ def predict(data: PredictionInput):
 
         fraud_status = "Fraud" if fraud_prob > 0.3 else "Normal"
 
-        # ===== 3. Premium Logic =====
+        # ===== 3. Risk Level =====
         if risk_score > 70:
-            premium = 55
             risk_level = "High"
         elif risk_score > 40:
-            premium = 38
             risk_level = "Medium"
         else:
-            premium = 25
             risk_level = "Low"
 
-        # ===== 4. Payout Logic =====
+        # ===== 4. NEW Dynamic Premium =====
+        base = data.base_price
+        premium = round(base + (risk_score * 0.5), 2)
+
+        # ===== 5. Payout Logic =====
         daily_income = data.weekly_earning / 7
 
         if fraud_status == "Fraud":
