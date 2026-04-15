@@ -134,6 +134,7 @@ class Policies(BaseModel) :
         plan: Plan tier selected by worker
         weekly_premium: Actual premium after streak discount applied
         max_payout: Maximum payout for this policy week
+        current_payout: Current payout for this policy week
         created_at: UTC timestamp of policy creation
         start_date: Policy coverage start date
         end_date: Policy coverage end date, None if not yet set
@@ -145,6 +146,7 @@ class Policies(BaseModel) :
     plan: Plan
     weekly_premium: float
     max_payout: float
+    current_payout: float
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     start_date: datetime
     end_date: Optional[datetime] = None
@@ -174,6 +176,7 @@ class Claims(BaseModel) :
     worker_id: str
     policy_id: str
     trigger_event_id: list[str]
+    trigger_events: list[EventType]
     claim_amount: float
     claim_type: ClaimType
     status: ClaimStatus

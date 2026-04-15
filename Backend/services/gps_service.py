@@ -7,10 +7,17 @@ import math
 MONITERED_WORKERS = {}
 
 async def insert_log(log: GpsLogs) :
-    return await gps_logs.log_gps(log)
+    result = await gps_logs.log_gps(log)
+    if log.worker_id in MONITERED_WORKERS :
+        MONITERED_WORKERS[log.worker_id]["update available"] = True
+    return result
 
 async def insert_log_multiple(logs: list[GpsLogs]) :
-    return await gps_logs.log_gps_many(logs)
+    inserted = await gps_logs.log_gps_many(logs)
+    log = logs[0]
+    if log.worker_id in MONITERED_WORKERS :
+        MONITERED_WORKERS[log.worker_id]["update available"] = True
+    return inserted
 
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371000  # meters
@@ -37,9 +44,9 @@ def compute_total_distance(logs):
 
     return distance
 
-def get_minmax_coordinate(logs) :
+def get_minmax_coordinate(logs):
     if not logs:
-        return 0
+        return None, None
 
     lats = []
     lons = []
@@ -49,9 +56,7 @@ def get_minmax_coordinate(logs) :
         lats.append(lat)
         lons.append(lon)
 
-    min_lat, max_lat = min(lats), max(lats)
-    min_lon, max_lon = min(lons), max(lons)
-    return ((min_lat, min_lon), (max_lat, max_lon))
+    return (min(lats), min(lons)), (max(lats), max(lons))
 
 
 def compute_area(min_coordinate, max_coordinate):
@@ -74,10 +79,7 @@ async def get_last_log(worker_id: str) :
 def store_monitored_workers(worker_id: str) :
     if worker_id in MONITERED_WORKERS :
         return
-    MONITERED_WORKERS[worker_id] = {
-        "last accessed" : datetime.now(timezone.utc),
-        "update available" : False
-    }
+    MONITERED_WORKERS[worker_id] = {"update available" : False}
 
 def remove_monitored_workers(worker_id: str) :
     MONITERED_WORKERS.pop(worker_id)
@@ -85,54 +87,81 @@ def remove_monitored_workers(worker_id: str) :
 async def monitor_worker_movement(worker_id: str, claim_id: str, start_time: datetime) -> dict:
     store_monitored_workers(worker_id)
 
-    min_coords = []
-    max_coords = []
+    min_coords = None
+    max_coords = None
     distance = 0
 
-    try :
-        while True :
+    fraud_checks = {
+        "high_distance": False,
+        "large_area": False,
+        "no_movement": True
+    }
+
+    try:
+        last_time = start_time
+
+        while True:
             worker_meta = MONITERED_WORKERS.get(worker_id)
 
-            if worker_meta is None :
-                break  # safety exit
-
-            # only process if new data available
-            if worker_meta["update available"] :
-                logs = await get_logs_after(worker_id, last_time)
-
-                if logs :
-                    distance += compute_total_distance(logs)
-                    mn, mx = get_minmax_coordinate(logs)
-                    min_coords[0] = min(min_coords[0], mn[0])
-                    min_coords[1] = min(min_coords[1], mn[1])
-                    max_coords[0] = max(max_coords[0], mx[0])
-                    max_coords[1] = max(max_coords[1], mx[1])
-
-                    # update last timestamp
-                    last_time = logs[-1]["timestamp"]
-
-                # reset flag
-                worker_meta["update available"] = False
-                worker_meta["last accessed"] = datetime.now(timezone.utc)
+            if worker_meta is None:
+                break
 
             await asyncio.sleep(5)
+
+            if not worker_meta["update available"]:
+                continue
+
+            logs = await get_logs_after(worker_id, last_time)
+
+            if logs:
+                fraud_checks["no_movement"] = False
+
+                distance += compute_total_distance(logs)
+
+                mn, mx = get_minmax_coordinate(logs)
+
+                if mn and mx:
+                    if min_coords is None:
+                        min_coords = list(mn)
+                        max_coords = list(mx)
+                    else:
+                        min_coords[0] = min(min_coords[0], mn[0])
+                        min_coords[1] = min(min_coords[1], mn[1])
+                        max_coords[0] = max(max_coords[0], mx[0])
+                        max_coords[1] = max(max_coords[1], mx[1])
+
+                last_time = logs[-1]["timestamp"]
+
+            worker_meta["update available"] = False
 
     except asyncio.CancelledError:
         remove_monitored_workers(worker_id)
 
-        # --- simple fraud logic ---
-        area = compute_area(min_coords, min_coords)
-        status = "clean"
+        # ---- compute area safely ----
+        area = 0
+        if min_coords and max_coords:
+            area = compute_area(min_coords, max_coords)
 
-        if area > 5000 or distance > 1000 :
+        # ---- fraud signals ----
+        if distance > 1000:
+            fraud_checks["high_distance"] = True
+
+        if area > 5000:
+            fraud_checks["large_area"] = True
+
+        # ---- final classification ----
+        if fraud_checks["high_distance"] or fraud_checks["large_area"]:
             status = "fraud"
-        elif area > 1000 or distance > 500:
+        elif distance > 500 or area > 1000:
             status = "suspicious"
+        else:
+            status = "clean"
 
         return {
             "worker_id": worker_id,
             "claim_id": claim_id,
-            "area": area,
             "distance": distance,
-            "status": status
+            "area": area,
+            "status": status,
+            "fraud_checks": fraud_checks
         }

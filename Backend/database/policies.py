@@ -128,3 +128,41 @@ async def complete_waiting_period(policy_id: str) -> bool:
         {"$set": {"waiting_period_complete": True}}
     )
     return result.modified_count > 0
+
+async def add_payout(policy_id: str, amount: float) -> float:
+    """
+    Adds a payout amount to the policy's current_payout.
+    If current_payout reaches or exceeds max_payout, deactivates the policy.
+    Returns the actual allowed payout — may be less than requested amount
+    if the worker is near their weekly cap.
+
+    Args:
+        policy_id: MongoDB ObjectId string
+        amount: Requested payout amount
+
+    Returns:
+        Actual payout amount allowed (capped at remaining balance)
+        Returns 0.0 if policy not found or already at cap
+    """
+    policy = await get_policy(policy_id)
+    if not policy:
+        return 0.0
+
+    remaining = policy["max_payout"] - policy["current_payout"]
+    if remaining <= 0:
+        return 0.0
+
+    allowed = min(amount, remaining)
+    new_total = policy["current_payout"] + allowed
+    is_maxed = new_total >= policy["max_payout"]
+
+    update = {"$set": {"current_payout": new_total}}
+    if is_maxed:
+        update["$set"]["is_active"] = False
+        update["$set"]["end_date"] = datetime.now(timezone.utc)
+
+    await db.get_database().policies.update_one(
+        {"_id": ObjectId(policy_id)},
+        update
+    )
+    return allowed

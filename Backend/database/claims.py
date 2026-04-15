@@ -1,6 +1,6 @@
 from database.Database import db
 from models import Claims
-from constants import ClaimStatus
+from constants import ClaimStatus, EventType
 from typing import Optional
 from bson import ObjectId
 from datetime import datetime, timezone
@@ -171,15 +171,16 @@ async def resolve_claim(claim_id: str, status: ClaimStatus) -> bool:
 
 async def get_claims_by_trigger(trigger_id: str):
     return await db.get_database().claims.find(
-        {"trigger_event_ids": {"$in": [trigger_id]}}
+        {"trigger_event_id": {"$in": [trigger_id]}}
     ).to_list(length=None)
 
-async def add_trigger_to_claim(claim_id: str, trigger_id: str):
+async def add_trigger_to_claim(claim_id: str, trigger_id: str, trigger_event: EventType):
     return await db.get_database().claims.update_one(
-        {"_id": claim_id},
+        {"_id": ObjectId(claim_id)},
         {
             "$addToSet": {
-                "trigger_event_ids": trigger_id
+                "trigger_event_id": trigger_id,
+                "trigger_event" : trigger_event
             }
         }
     )
@@ -189,7 +190,7 @@ async def remove_trigger_from_claim(claim_id: str, trigger_id: str):
         {"_id": claim_id},
         {
             "$pull": {
-                "trigger_event_ids": trigger_id
+                "trigger_event_id": trigger_id
             }
         }
     )
@@ -201,3 +202,53 @@ async def get_active_claim_by_worker(worker_id: str) :
             "status" : {"$in" : [ClaimStatus.MONITORING, ClaimStatus.MANUAL_REVIEW, ClaimStatus.FLAGGED]}
         }
     )
+
+async def get_all_active_claims() :
+    return await db.get_database().claims.find(
+        {
+            "status" : {"$in" : [ClaimStatus.MONITORING, ClaimStatus.MANUAL_REVIEW, ClaimStatus.FLAGGED]}
+        }
+    ).to_list(length=None)
+
+async def update_claim_amount(claim_id: str, amount: float) -> bool:
+    """
+    Updates the payout amount for a claim.
+
+    Args:
+        claim_id: MongoDB ObjectId string
+        amount: Final payout amount
+
+    Returns:
+        True if updated, False otherwise
+    """
+    result = await db.get_database().claims.update_one(
+        {"_id": ObjectId(claim_id)},
+        {
+            "$set": {
+                "claim_amount": amount
+            }
+        }
+    )
+    return result.modified_count > 0
+
+
+async def update_fraud_checks(claim_id: str, fraud_checks: dict[str, bool]) -> bool:
+    """
+    Updates fraud check results for a claim.
+
+    Args:
+        claim_id: MongoDB ObjectId string
+        fraud_checks: Dict of fraud signals
+
+    Returns:
+        True if updated, False otherwise
+    """
+    result = await db.get_database().claims.update_one(
+        {"_id": ObjectId(claim_id)},
+        {
+            "$set": {
+                "fraud_checks": fraud_checks
+            }
+        }
+    )
+    return result.modified_count > 0

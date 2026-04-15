@@ -25,7 +25,7 @@ def make_trigger_object(event_type: EventType, source: str="Mocked") :
 async def create_trigger(event: TriggerEvents) :
     return await trigger_events.create_trigger_event(event)
 
-async def simulate_trigger(trigger_event: EventType) -> int:
+async def simulate_trigger(event: EventType) -> int:
     """
     Simulates a disruption event.
     
@@ -36,7 +36,7 @@ async def simulate_trigger(trigger_event: EventType) -> int:
     """
     # now = datetime.utcnow()
     # start = now - timedelta(hours=2)
-    trigger_event = make_trigger_object(trigger_event)
+    trigger_event = make_trigger_object(event)
     
     trigger_id, affected_workers = await asyncio.gather(
         create_trigger(trigger_event),
@@ -55,5 +55,26 @@ async def simulate_trigger(trigger_event: EventType) -> int:
             }
         )
 
+    await claim_service.create_claim_bulk(info, trigger_id, event)
+    return trigger_id
 
-    return await claim_service.create_claim_bulk(info, trigger_id)
+async def resolve_trigger(trigger_id: str) :
+    return await trigger_events.deactivate_event(trigger_id)
+
+async def end_trigger(trigger_id: str):
+    """
+    Ends a trigger:
+    1. mark trigger inactive
+    2. remove trigger from all claims
+    3. stop monitoring where no triggers left
+    4. resolve claims based on GPS result
+    """
+
+    # 1. deactivate trigger
+    await resolve_trigger(trigger_id)
+
+    # 2. remove trigger from all running claims
+    await claim_service.resolve_trigger_in_claims(trigger_id)
+
+    # 3 & 4. stop + resolve eligible claims
+    return await claim_service.close_resolved_claims()
