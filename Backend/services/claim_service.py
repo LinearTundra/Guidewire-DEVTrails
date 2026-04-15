@@ -91,6 +91,97 @@ async def resolve_trigger_in_claims(trigger_id) :
     ]
     await asyncio.gather(*tasks, return_exceptions=True)
 
+async def evaluate_claim(claim: dict, result: dict) -> dict:
+    gps_status = result["status"]
+    distance = result.get("distance", 0)
+    area = result.get("area", 0)
+    gps_checks = result.get("fraud_checks", {})
+
+    # ---- ML payload ----
+    ml_payload = build_ml_payload(distance)
+
+    ml_result = await ml_service.get_risk_score(ml_payload)
+
+    final_status = derive_final_status(gps_status, ml_result)
+
+    fraud_checks = build_fraud_checks(
+        distance,
+        area,
+        gps_checks,
+        ml_result,
+        final_status
+    )
+
+    return {
+        "final_status": final_status,
+        "fraud_checks": fraud_checks
+    }
+
+def build_ml_payload(distance: float) -> dict:
+    return {
+        "precip_mm": 0,
+        "temperature_celsius": 0,
+        "humidity": 50,
+        "aqi": 0,
+
+        "hours_worked": 8,
+        "distance_km": distance / 1000,
+        "orders_completed": 0,
+        "avg_speed": (distance / 1000) / 8 if distance > 0 else 0,
+
+        "claims_last_week": 0,
+        "weekly_earning": 0,
+        "hours_inactive": 0,
+
+        "base_price": 100
+    }
+
+def derive_final_status(gps_status: str, ml_result: dict | None) -> str:
+    if not ml_result:
+        return gps_status
+
+    ml_flag = ml_result.get("fraud_status")
+
+    if ml_flag == "fraud":
+        return "fraud"
+
+    if ml_flag == "suspicious" and gps_status == "clean":
+        return "suspicious"
+
+    return gps_status
+
+def build_fraud_checks(distance, area, gps_checks, ml_result, final_status):
+    return {
+        "gps": {
+            "distance_m": distance,
+            "area_m2": area,
+            **gps_checks
+        },
+        "ml": ml_result,
+        "final_status": final_status
+    }
+
+async def execute_claim_decision(claim_id: str, claim: dict, final_status: str):
+    policy_id = claim["policy_id"]
+    claim_type = claim.get("claim_type", ClaimType.FULL_DAY)
+
+    if final_status == "clean":
+        payout = await policy_service.process_claim_payout(
+            policy_id=policy_id,
+            claim_type=claim_type
+        )
+
+        if payout > 0:
+            await claims.update_claim_amount(claim_id, payout)
+            return await auto_approve_claim(claim_id)
+
+        return await reject_claim(claim_id)
+
+    if final_status == "suspicious":
+        return await flag_claim(claim_id)
+
+    return await reject_claim(claim_id)
+
 async def close_resolved_claims():
     claim_ids = list(RUNNING_TASKS.keys())
 
@@ -108,7 +199,6 @@ async def close_resolved_claims():
         if claim.get("trigger_event_ids"):
             continue
 
-        # stop monitoring
         task = RUNNING_TASKS.get(claim_id)
         remove_task(claim_id)
 
@@ -120,98 +210,30 @@ async def close_resolved_claims():
         try:
             result = await task
 
-            # -------------------------
-            # Extract GPS signals
-            # -------------------------
-            gps_status = result["status"]
-            distance = result.get("distance", 0)
-            area = result.get("area", 0)
-            gps_checks = result.get("fraud_checks", {})
+            evaluation = await evaluate_claim(claim, result)
 
-            policy_id = claim["policy_id"]
-            claim_type = claim.get("claim_type", ClaimType.FULL_DAY)
+            await claims.update_fraud_checks(
+                claim_id,
+                evaluation["fraud_checks"]
+            )
 
-            # -------------------------
-            # Build ML payload
-            # -------------------------
-            ml_payload = {
-                "precip_mm": 0,
-                "temperature_celsius": 0,
-                "humidity": 50,
-                "aqi": 0,
-
-                "hours_worked": 8,
-                "distance_km": distance / 1000,
-                "orders_completed": 0,
-                "avg_speed": (distance / 1000) / 8 if distance > 0 else 0,
-
-                "claims_last_week": 0,
-                "weekly_earning": 0,
-                "hours_inactive": 0,
-
-                "base_price": 100
-            }
-
-            ml_result = await ml_service.get_risk_score(ml_payload)
-
-            # -------------------------
-            # Combine decisions
-            # -------------------------
-            final_status = gps_status
-            ml_flag = None
-
-            if ml_result:
-                ml_flag = ml_result.get("fraud_status")
-
-                if ml_flag == "fraud":
-                    final_status = "fraud"
-                elif ml_flag == "suspicious" and gps_status == "clean":
-                    final_status = "suspicious"
-
-            # -------------------------
-            # Store fraud checks
-            # -------------------------
-            fraud_checks = {
-                "gps": {
-                    "distance_m": distance,
-                    "area_m2": area,
-                    **gps_checks
-                },
-                "ml": ml_result if ml_result else None,
-                "final_status": final_status
-            }
-
-            await claims.update_fraud_checks(claim_id, fraud_checks)
-
-            # -------------------------
-            # Final decision
-            # -------------------------
-            if final_status == "clean":
-                payout = await policy_service.process_claim_payout(
-                    policy_id=policy_id,
-                    claim_type=claim_type
+            tasks.append(
+                execute_claim_decision(
+                    claim_id,
+                    claim,
+                    evaluation["final_status"]
                 )
-
-                if payout > 0:
-                    await claims.update_claim_amount(claim_id, payout)
-                    tasks.append(auto_approve_claim(claim_id))
-                else:
-                    tasks.append(reject_claim(claim_id))
-
-            elif final_status == "suspicious":
-                tasks.append(flag_claim(claim_id))
-
-            else:
-                tasks.append(reject_claim(claim_id))
+            )
 
         except asyncio.CancelledError:
             continue
+
         except Exception as e:
             print(f"[ERROR] claim {claim_id}: {e}")
             tasks.append(flag_claim(claim_id))
 
     result = await asyncio.gather(*tasks, return_exceptions=True)
-    return sum(1 for r in result if r is True) 
+    return sum(1 for r in result if r is True)
 
 
 def store_task(claim_id: str, task: asyncio.Task):
