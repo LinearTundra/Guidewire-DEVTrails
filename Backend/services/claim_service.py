@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from constants import ClaimStatus, ClaimType, EventType
 from models import Claims
 from database import claims
-from services import gps_service, policy_service
+from services import gps_service, policy_service, ml_service
 import asyncio
 
 
@@ -105,8 +105,7 @@ async def close_resolved_claims():
         if not claim or isinstance(claim, Exception):
             continue
 
-        triggers = claim.get("trigger_event_ids", [])
-        if triggers:
+        if claim.get("trigger_event_ids"):
             continue
 
         # stop monitoring
@@ -121,25 +120,73 @@ async def close_resolved_claims():
         try:
             result = await task
 
-            # --- extract ---
-            status = result["status"]
+            # -------------------------
+            # Extract GPS signals
+            # -------------------------
+            gps_status = result["status"]
             distance = result.get("distance", 0)
             area = result.get("area", 0)
+            gps_checks = result.get("fraud_checks", {})
 
             policy_id = claim["policy_id"]
             claim_type = claim.get("claim_type", ClaimType.FULL_DAY)
 
-            # --- store fraud checks ---
+            # -------------------------
+            # Build ML payload
+            # -------------------------
+            ml_payload = {
+                "precip_mm": 0,
+                "temperature_celsius": 0,
+                "humidity": 50,
+                "aqi": 0,
+
+                "hours_worked": 8,
+                "distance_km": distance / 1000,
+                "orders_completed": 0,
+                "avg_speed": (distance / 1000) / 8 if distance > 0 else 0,
+
+                "claims_last_week": 0,
+                "weekly_earning": 0,
+                "hours_inactive": 0,
+
+                "base_price": 100
+            }
+
+            ml_result = await ml_service.get_risk_score(ml_payload)
+
+            # -------------------------
+            # Combine decisions
+            # -------------------------
+            final_status = gps_status
+            ml_flag = None
+
+            if ml_result:
+                ml_flag = ml_result.get("fraud_status")
+
+                if ml_flag == "fraud":
+                    final_status = "fraud"
+                elif ml_flag == "suspicious" and gps_status == "clean":
+                    final_status = "suspicious"
+
+            # -------------------------
+            # Store fraud checks
+            # -------------------------
             fraud_checks = {
-                "distance_meters": distance,
-                "area_m2": area,
-                "status": status
+                "gps": {
+                    "distance_m": distance,
+                    "area_m2": area,
+                    **gps_checks
+                },
+                "ml": ml_result if ml_result else None,
+                "final_status": final_status
             }
 
             await claims.update_fraud_checks(claim_id, fraud_checks)
 
-            # --- decision logic ---
-            if status == "clean":
+            # -------------------------
+            # Final decision
+            # -------------------------
+            if final_status == "clean":
                 payout = await policy_service.process_claim_payout(
                     policy_id=policy_id,
                     claim_type=claim_type
@@ -151,24 +198,20 @@ async def close_resolved_claims():
                 else:
                     tasks.append(reject_claim(claim_id))
 
-            elif status == "suspicious":
+            elif final_status == "suspicious":
                 tasks.append(flag_claim(claim_id))
 
             else:
                 tasks.append(reject_claim(claim_id))
 
         except asyncio.CancelledError:
-            # expected path — ignore
             continue
         except Exception as e:
-            # don't silently fail
-            print(f"Error resolving claim {claim_id}: {e}")
+            print(f"[ERROR] claim {claim_id}: {e}")
             tasks.append(flag_claim(claim_id))
 
     result = await asyncio.gather(*tasks, return_exceptions=True)
-
-    success = [r for r in result if r is True]
-    return len(success) 
+    return sum(1 for r in result if r is True) 
 
 
 def store_task(claim_id: str, task: asyncio.Task):
