@@ -1,7 +1,7 @@
 import asyncio
 from datetime import datetime, timezone, timedelta
 
-from API import weather_api, aqi_api, disaster_api
+from API import weather_client, aqi_client, disaster_client
 from constants import EventType
 from services import trigger_service
 
@@ -66,8 +66,8 @@ async def poll_weather():
     zone_list = []
 
     for zone, (lat, lon) in ZONES.items():
-        tasks.append(weather_api.get_rain_data(lat, lon))
-        tasks.append(weather_api.get_heat_data(lat, lon))
+        tasks.append(weather_client.get_rain_data(lat, lon))
+        tasks.append(weather_client.get_heat_data(lat, lon))
         zone_list.append(zone)
 
     results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -93,7 +93,7 @@ async def poll_aqi():
     cities = list(CITY_TO_ZONES.keys())
 
     results = await asyncio.gather(
-        *[aqi_api.get_aqi_data(city) for city in cities],
+        *[aqi_client.get_aqi_data(city) for city in cities],
         return_exceptions=True
     )
 
@@ -112,7 +112,7 @@ async def poll_aqi():
 
 
 async def poll_disasters():
-    responses = await disaster_api.get_disaster_alerts()
+    responses = await disaster_client.get_disaster_alerts()
 
     if not responses:
         return
@@ -135,15 +135,19 @@ async def poll_disasters():
 # -----------------------------
 
 async def run_scheduler():
-    while True:
-        try:
-            await asyncio.gather(
-                poll_weather(),
-                poll_aqi(),
-                poll_disasters(),
-                return_exceptions=True
-            )
-        except Exception as e:
-            print("Scheduler error:", e)
+    try:
+        while True:
+            try:
+                await asyncio.gather(
+                    poll_weather(),
+                    poll_aqi(),
+                    poll_disasters(),
+                    return_exceptions=True
+                )
+            except Exception as e:
+                print("Scheduler error:", e)
 
-        await asyncio.sleep(POLL_INTERVAL)
+            await asyncio.sleep(POLL_INTERVAL)
+
+    except asyncio.CancelledError:
+        print("Scheduler shutting down...")
