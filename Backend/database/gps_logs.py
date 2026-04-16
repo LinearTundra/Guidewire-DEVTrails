@@ -48,9 +48,15 @@ async def get_logs_by_worker(worker_id: str) -> list[dict]:
     Returns:
         List of GPS log documents ordered by timestamp ascending
     """
-    return await db.get_database().gps_logs.find(
+    result = await db.get_database().gps_logs.find(
         {"worker_id": worker_id}
     ).sort("timestamp", 1).to_list(length=None)
+    for log in result :
+        if log is None :
+            continue
+        if "_id" in log :
+            log["_id"] = str(log["_id"])
+    return result
 
 
 async def get_logs_in_window(worker_id: str, start: datetime, end: datetime) -> list[dict]:
@@ -67,7 +73,7 @@ async def get_logs_in_window(worker_id: str, start: datetime, end: datetime) -> 
     Returns:
         List of GPS log documents within the time window
     """
-    return await db.get_database().gps_logs.find(
+    result = await db.get_database().gps_logs.find(
         {
             "worker_id": worker_id,
             "timestamp": {
@@ -76,7 +82,12 @@ async def get_logs_in_window(worker_id: str, start: datetime, end: datetime) -> 
             }
         }
     ).sort("timestamp", 1).to_list(length=None)
-
+    for log in result :
+        if log is None :
+            continue
+        if "_id" in log :
+            log["_id"] = str(log["_id"])
+    return result
 
 async def get_mocked_logs_in_window(worker_id: str, start: datetime, end: datetime) -> list[dict]:
     """
@@ -92,7 +103,7 @@ async def get_mocked_logs_in_window(worker_id: str, start: datetime, end: dateti
     Returns:
         List of mocked GPS log documents within the time window
     """
-    return await db.get_database().gps_logs.find(
+    result = await db.get_database().gps_logs.find(
         {
             "worker_id": worker_id,
             "is_mocked": True,
@@ -102,7 +113,12 @@ async def get_mocked_logs_in_window(worker_id: str, start: datetime, end: dateti
             }
         }
     ).sort("timestamp", 1).to_list(length=None)
-
+    for log in result :
+        if log is None :
+            continue
+        if "_id" in log :
+            log["_id"] = str(log["_id"])
+    return result
 
 async def count_logs_in_window(worker_id: str, start: datetime, end: datetime) -> int:
     """
@@ -136,7 +152,12 @@ async def get_last_log(worker_id: str) -> dict | None:
     Returns:
         Last entered log or None
     '''
-    return await db.get_database().gps_logs.find_one(
+    result = await db.get_database().gps_logs.find_one(
         {"worker_id" : worker_id},
         sort = [("timestamp", -1)]
     )
+    if result is None :
+        return None
+    if "_id" in result :
+        result["_id"] = str(result["_id"])
+    return result

@@ -80,27 +80,29 @@ class Worker(BaseModel) :
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
-class ApiCache(BaseModel) :
+class ExternalAPIResponse(BaseModel) :
     """
     Stores API responses to avoid redundant external calls.
     Before hitting IMD/AQICN/NDMA, check here first.
     
     Attributes:
         source: API that was called e.g. "IMD", "AQICN", "NDMA", "Tomorrow.io"
-        state: State the data is for
         city: City the data is for
         zone: Zone the data is for
-        requested_date: The date the data is about, not when it was fetched
+        event_type: Type of event that has occured
+        severity: How severe the event is
+        is_trigger: If the event validates the need to activate claim cycle
+        raw: Original response of the api
         fetched_at: When the API was actually called
-        result: Raw API response as string or dict
     """
-    source: str
-    state: str
-    city: str
-    zone: str
-    requested_date: datetime
+    source: str                # "AQICN", "NDMA", "TOMORROW"
+    city: Optional[str]
+    zone: Optional[str]
+    event_type: Optional[EventType]  # "AQI", "FLOOD", "RAIN", etc
+    severity: Optional[float]  # AQI value, rainfall mm, etc
+    is_trigger: bool           # CRITICAL → your system uses this
+    raw: dict[str, Any]        # original response
     fetched_at: datetime
-    result: Union[str, dict]
 
 
 class PlanTiers(BaseModel) :
@@ -134,6 +136,7 @@ class Policies(BaseModel) :
         plan: Plan tier selected by worker
         weekly_premium: Actual premium after streak discount applied
         max_payout: Maximum payout for this policy week
+        current_payout: Current payout for this policy week
         created_at: UTC timestamp of policy creation
         start_date: Policy coverage start date
         end_date: Policy coverage end date, None if not yet set
@@ -145,6 +148,7 @@ class Policies(BaseModel) :
     plan: Plan
     weekly_premium: float
     max_payout: float
+    current_payout: float
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     start_date: datetime
     end_date: Optional[datetime] = None
@@ -173,11 +177,12 @@ class Claims(BaseModel) :
     """
     worker_id: str
     policy_id: str
-    trigger_event_id: str
+    trigger_event_id: list[str]
+    trigger_events: list[EventType]
     claim_amount: float
     claim_type: ClaimType
     status: ClaimStatus
-    fraud_checks: dict[str, bool]
+    fraud_checks: Optional[dict[str, bool]] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     resolved_at: Optional[datetime] = None
 

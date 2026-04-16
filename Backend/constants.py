@@ -83,3 +83,5 @@ class EventType(str, Enum):
     HEAT = "heat"
     BANDH = "bandh"
     CURFEW = "curfew"
+    DISASTER = "disaster"
+    WEATHER = "weather"

@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from models import ApiResponse
 from constants import EventType
 from services import trigger_service
+from asyncio import sleep, create_task
 
 
 """
@@ -20,9 +21,14 @@ router = APIRouter(prefix="/trigger")
 
 @router.get(
     "/simulate",
-    summary="Simulate an event",
+    summary="Simulate an event for certain peroid of time",
     response_model=ApiResponse
 )
-async def simulate_trigger(event: EventType) :
-    await trigger_service.simulate_trigger(event)
-    return ApiResponse(success=True, data="Event Created")
+async def simulate_trigger(event: EventType, zone: str, time: float=20) :
+    create_task(runSequence(event, zone, time))
+    return ApiResponse(success=True, data="Event Simulated")
+
+async def runSequence(event: EventType, zone: str, time: float) :
+    trigger_id = await trigger_service.simulate_trigger(event, zone)
+    await sleep(time)
+    await trigger_service.end_trigger(trigger_id)

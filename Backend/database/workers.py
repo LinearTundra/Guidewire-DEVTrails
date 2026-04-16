@@ -59,7 +59,14 @@ async def get_workers_by_zone(zone: str) -> list[dict]:
     Returns:
         List of worker documents
     """
-    return await db.get_database().workers.find({"zone": zone}).to_list(length=None)
+    result = await db.get_database().workers.find({"zone": zone}).to_list(length=None)
+    for worker in result :
+        if worker is None :
+            continue
+        if "_id" not in worker :
+            continue
+        worker["_id"] = str(worker["_id"])
+    return result
 
 
 async def update_worker_streak(worker_id: str, streak: int) -> bool:
