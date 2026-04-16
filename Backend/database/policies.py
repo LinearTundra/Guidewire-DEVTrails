@@ -46,12 +46,17 @@ async def get_active_policy(worker_id: str) -> Optional[dict]:
     Returns:
         Active policy document as dict or None if no active policy found
     """
-    return await db.get_database().policies.find_one(
+    result = await db.get_database().policies.find_one(
         {
             "worker_id": worker_id,
             "is_active": True
         }
     )
+    if result is None :
+        return None
+    if "_id" in result :
+        result["_id"] = str(result["_id"])
+    return result
 
 
 async def get_policies_by_worker(worker_id: str) -> list[dict]:

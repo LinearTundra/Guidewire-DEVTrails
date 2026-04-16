@@ -20,7 +20,7 @@ async def lifespan(app: FastAPI):
     
     scheduler_task.cancel()
     try :
-        await scheduler_task
+        scheduler_task
     except :
         pass
     await db.close()

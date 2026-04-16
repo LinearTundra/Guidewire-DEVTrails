@@ -1,6 +1,6 @@
 import asyncio
 from datetime import datetime, timezone, timedelta
-
+from models import ExternalAPIResponse
 from API import weather_client, aqi_client, disaster_client
 from constants import EventType
 from services import trigger_service
@@ -47,7 +47,7 @@ def should_create_trigger(event: EventType, zone: str) -> bool:
 # Core processing
 # -----------------------------
 
-async def process_event(resp, zone: str):
+async def process_event(resp: ExternalAPIResponse, zone: str):
     if not resp or not resp.is_trigger:
         return
 

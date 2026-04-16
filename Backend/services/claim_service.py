@@ -17,32 +17,46 @@ async def insert_claim(worker_id: str, policy_id: str, trigger_event_id: str, tr
         worker_id: Unique id of the worker
         policy_id: Unique id of the active policy
         trigger_event_id: Unique id of the trigger event
+        trigger_event: Type of event
     
     Returns:
         Unique claim_id of the newly created claim
     """
 
-    active_claim = await claims.get_active_claim_by_worker(worker_id)
+    print(f"Creating claim of {worker_id}")
+    try :
+        active_claim = await claims.get_active_claim_by_worker(worker_id)
+        print(f"Last claim found {active_claim}")
+    except Exception as e :
+        print(e)
+        return
     if active_claim is None :
-        claim = Claims(
-            worker_id=worker_id,
-            policy_id=policy_id,
-            trigger_event_id=[trigger_event_id],
-            trigger_events=[trigger_event],
-            claim_amount=0,
-            claim_type=ClaimType.FULL_DAY,
-            status=ClaimStatus.MONITORING,
-            fraud_checks={}
-        )
+        print("No active claim found")
+        try :
+            claim = Claims(
+                worker_id=worker_id,
+                policy_id=policy_id,
+                trigger_event_id=[trigger_event_id],
+                trigger_events=[trigger_event],
+                claim_amount=0,
+                claim_type=ClaimType.FULL_DAY,
+                status=ClaimStatus.MONITORING,
+            )
+        except Exception as e :
+            print(e)
+            return
+        print(f"Inserting claim of {worker_id}")
         claim_id = await claims.create_claim(claim)
+        print(f"Inserted claim {claim_id}, Monitoring worker {worker_id}")
         task = asyncio.create_task(gps_service.monitor_worker_movement(worker_id, claim_id, datetime.now(timezone.utc)))
         store_task(claim_id, task)
     else :
+        print("Fetched active claim")
         claim_id = active_claim.get("_id")
         if claim_id is None :
             return None
         await claims.add_trigger_to_claim(str(claim_id), trigger_event_id, trigger_event)
-
+    print("Created and Inserted claims in db.")
     return claim_id
 
 
@@ -67,9 +81,11 @@ async def create_claim_bulk(workers: list[dict], trigger_event_id: str, trigger_
         )
         for w in workers
     ]
+    print(f"Inserting in claims bulk of {len(workers)} workers.")
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     success = [r for r in results if not isinstance(r, Exception)]
+    print(f"Inserted {len(success)}")
 
     return len(success)
 

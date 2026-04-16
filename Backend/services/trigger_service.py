@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from services import gps_service, claim_service, worker_service
+from services import claim_service, worker_service
 from constants import EventType, Severity
 from database import trigger_events
 from models import TriggerEvents
@@ -7,13 +7,13 @@ import asyncio
 
 
 
-def make_trigger_object(event_type: EventType, source: str="Mocked") :
+def make_trigger_object(event_type: EventType, zone: str, source: str="Mocked") :
     return TriggerEvents(
         event_type=event_type,
         source=source,  
         state="Delhi",
         city="Delhi",
-        zone="Zone-1",
+        zone=zone,
         threshold_value="50",
         severity=Severity.RED,
         start_time=datetime.now(timezone.utc),
@@ -25,7 +25,7 @@ def make_trigger_object(event_type: EventType, source: str="Mocked") :
 async def create_trigger(event: TriggerEvents) :
     return await trigger_events.create_trigger_event(event)
 
-async def simulate_trigger(event: EventType) -> int:
+async def simulate_trigger(event: EventType, zone: str="Dwarka") -> int:
     """
     Simulates a disruption event.
     
@@ -36,13 +36,15 @@ async def simulate_trigger(event: EventType) -> int:
     """
     # now = datetime.utcnow()
     # start = now - timedelta(hours=2)
-    trigger_event = make_trigger_object(event)
+    trigger_event = make_trigger_object(event, zone)
+    print("Trigger object created.")
     
     trigger_id, affected_workers = await asyncio.gather(
         create_trigger(trigger_event),
         worker_service.get_workers_covered_from_trigger(trigger_event)
     )
     info = []
+    print("Trigger stored.\nWorkers fetched.")
 
     for worker_id, policy_id in affected_workers.items():
         # inactive = await gps_service.is_worker_inactive(worker_id, start, now)
@@ -54,7 +56,7 @@ async def simulate_trigger(event: EventType) -> int:
                 "policy_id" : policy_id
             }
         )
-
+    print("Creating claims")
     await claim_service.create_claim_bulk(info, trigger_id, event)
     return trigger_id
 
@@ -72,6 +74,7 @@ async def end_trigger(trigger_id: str):
 
     # 1. deactivate trigger
     await resolve_trigger(trigger_id)
+    print("Resolved trigger event")
 
     # 2. remove trigger from all running claims
     await claim_service.resolve_trigger_in_claims(trigger_id)

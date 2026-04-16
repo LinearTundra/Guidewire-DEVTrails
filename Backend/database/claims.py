@@ -32,7 +32,12 @@ async def get_claim(claim_id: str) -> Optional[dict]:
     Returns:
         Claim document as dict or None if not found
     """
-    return await db.get_database().claims.find_one({"_id": ObjectId(claim_id)})
+    result = await db.get_database().claims.find_one({"_id": ObjectId(claim_id)})
+    if result is None :
+        return
+    if "_id" in result :
+        result["_id"] = str(result["_id"])
+    return result
 
 
 async def get_claims_by_worker(worker_id: str, claimStatusList: list[ClaimStatus] = None) -> list[dict]:
@@ -49,7 +54,13 @@ async def get_claims_by_worker(worker_id: str, claimStatusList: list[ClaimStatus
     fields = {"worker_id": worker_id}
     if claimStatusList :
         fields["status"] = {"$in" : claimStatusList}
-    return await db.get_database().claims.find(fields).sort("created_at", -1).to_list(length=None)
+    result = await db.get_database().claims.find(fields).sort("created_at", -1).to_list(length=None)
+    for claim in result :
+        if claim is None :
+            continue
+        if "_id" in claim :
+            claim["_id"] = str(claim["_id"])
+    return result
 
 
 async def get_last_claim_by_worker(worker_id: str, claimStatusList: list[ClaimStatus] = None) -> list[dict]:
@@ -66,10 +77,15 @@ async def get_last_claim_by_worker(worker_id: str, claimStatusList: list[ClaimSt
     fields = {"worker_id": worker_id}
     if claimStatusList :
         fields["status"] = {"$in" : claimStatusList}
-    return await db.get_database().claims.find_one(
+    result = await db.get_database().claims.find_one(
         fields,
         sort = [("created_at", -1)]
     )
+    if result is None :
+        return
+    if "_id" in result :
+        result["_id"] = str(result["_id"])
+    return result
 
 
 async def get_claims_by_policy(policy_id: str) -> list[dict]:
@@ -83,9 +99,15 @@ async def get_claims_by_policy(policy_id: str) -> list[dict]:
     Returns:
         List of claim documents for that policy
     """
-    return await db.get_database().claims.find(
+    result = await db.get_database().claims.find(
         {"policy_id": policy_id}
     ).to_list(length=None)
+    for claim in result :
+        if claim is None :
+            continue
+        if "_id" in claim :
+            claim["_id"] = str(claim["_id"])
+    return result
 
 
 async def get_claims_by_status(status: ClaimStatus) -> list[dict]:
@@ -99,9 +121,15 @@ async def get_claims_by_status(status: ClaimStatus) -> list[dict]:
     Returns:
         List of claim documents with matching status
     """
-    return await db.get_database().claims.find(
+    result = await db.get_database().claims.find(
         {"status": status.value}
     ).sort("created_at", -1).to_list(length=None)
+    for claim in result :
+        if claim is None :
+            continue
+        if "_id" in claim :
+            claim["_id"] = str(claim["_id"])
+    return result
 
 
 async def get_weekly_payout_total(policy_id: str) -> float:
@@ -170,9 +198,15 @@ async def resolve_claim(claim_id: str, status: ClaimStatus) -> bool:
     return result.modified_count > 0
 
 async def get_claims_by_trigger(trigger_id: str):
-    return await db.get_database().claims.find(
+    result = await db.get_database().claims.find(
         {"trigger_event_id": {"$in": [trigger_id]}}
     ).to_list(length=None)
+    for claim in result :
+        if claim is None :
+            continue
+        if "_id" in claim :
+            claim["_id"] = str(claim["_id"])
+    return result
 
 async def add_trigger_to_claim(claim_id: str, trigger_id: str, trigger_event: EventType):
     return await db.get_database().claims.update_one(
@@ -196,19 +230,30 @@ async def remove_trigger_from_claim(claim_id: str, trigger_id: str):
     )
 
 async def get_active_claim_by_worker(worker_id: str) :
-    return await db.get_database().claims.find_one(
+    result = await db.get_database().claims.find_one(
         {
             "worker_id" : worker_id,
             "status" : {"$in" : [ClaimStatus.MONITORING, ClaimStatus.MANUAL_REVIEW, ClaimStatus.FLAGGED]}
         }
     )
+    if result is None :
+        return
+    if "_id" in result :
+        result["_id"] = str(result["_id"])
+    return result
 
 async def get_all_active_claims() :
-    return await db.get_database().claims.find(
+    result = await db.get_database().claims.find(
         {
             "status" : {"$in" : [ClaimStatus.MONITORING, ClaimStatus.MANUAL_REVIEW, ClaimStatus.FLAGGED]}
         }
     ).to_list(length=None)
+    for claim in result :
+        if claim is None :
+            continue
+        if "_id" in claim :
+            claim["_id"] = str(claim["_id"])
+    return result
 
 async def update_claim_amount(claim_id: str, amount: float) -> bool:
     """

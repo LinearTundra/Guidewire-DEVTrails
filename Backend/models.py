@@ -182,7 +182,7 @@ class Claims(BaseModel) :
     claim_amount: float
     claim_type: ClaimType
     status: ClaimStatus
-    fraud_checks: dict[str, bool]
+    fraud_checks: Optional[dict[str, bool]] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     resolved_at: Optional[datetime] = None
 
