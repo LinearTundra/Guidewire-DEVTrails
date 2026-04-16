@@ -1,6 +1,31 @@
 from datetime import datetime
-from database import workers
+from database.workers import get_workers_by_zone
+from models import TriggerEvents
+from services.policy_service import get_worker_active_policy
 
+
+policies_covering = {
+    "rainfall" : ("Basic", "Standard", "Premium"),
+    "flood" : ("Basic", "Standard", "Premium"),
+    "aqi" : ("Standard", "Premium"),
+    "heat" : ("Premium"),
+    "bandh" : ("Premium"),
+    "curfew" : ("Premium")
+}
+
+async def get_workers_covered_from_trigger(trigger: TriggerEvents) -> dict[str, str]:
+    zone = trigger.zone
+
+    workers = await get_workers_by_zone(zone)
+    result = {}
+    for worker in workers :
+        policy = await get_worker_active_policy(str(worker["_id"]))
+        if policy == None :
+            continue
+        if policy.get("plan", "") in policies_covering[trigger.event_type] :
+            result[worker["_id"]] = policy["_id"]
+
+    return result
 
 async def worker_details(worker_id: str) :
     pass

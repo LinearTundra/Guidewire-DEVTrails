@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from models import ApiResponse, GpsLogs
-from database import gps_logs
-
+from services import gps_service
 
 """
 Error Codes:
@@ -27,7 +26,7 @@ router = APIRouter(prefix="/gps")
 )
 async def insert_location(data: GpsLogs) :
     try :
-        await gps_logs.log_gps(data)
+        await gps_service.insert_log(data)
         return ApiResponse(success=True)
     except :
         raise HTTPException(status_code=500, detail="Failed to insert gps log")
@@ -49,7 +48,7 @@ async def insert_location_many(data: list[GpsLogs]) :
     if not data :
         raise HTTPException(status_code=400, detail="Empty GPS log list")
     try :
-        await gps_logs.log_gps_many(data)
+        await gps_service.insert_log_multiple(data)
         return ApiResponse(success=True)
     except Exception :
         raise HTTPException(status_code=500, detail="Failed to insert gps log")

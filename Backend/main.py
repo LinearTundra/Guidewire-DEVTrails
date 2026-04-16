@@ -2,16 +2,27 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from database import db
 import uvicorn
+from services.scheduler_service import run_scheduler
+from asyncio import create_task
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
     Manages application startup and shutdown.
+    Scheduler starts on startup and closes on shutdown.
     Database connection opens on startup and closes on shutdown.
     """
+    scheduler_task = create_task(run_scheduler())
     await db.create_gps_index()
+    
     yield
+    
+    scheduler_task.cancel()
+    try :
+        scheduler_task
+    except :
+        pass
     await db.close()
 
 
