@@ -1,5 +1,5 @@
 from datetime import datetime
-from database.workers import get_workers_by_zone
+from database.workers import get_workers_by_zone, get_worker
 from models import TriggerEvents
 from services.policy_service import get_worker_active_policy
 
@@ -28,4 +28,8 @@ async def get_workers_covered_from_trigger(trigger: TriggerEvents) -> dict[str, 
     return result
 
 async def worker_details(worker_id: str) :
-    pass
+    worker = await get_worker(worker_id)
+    if worker is None :
+        return None
+    worker["_id"] = str(worker["_id"])
+    return worker

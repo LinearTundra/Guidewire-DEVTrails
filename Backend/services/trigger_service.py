@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from services import claim_service, worker_service
 from constants import EventType, Severity
 from database import trigger_events
@@ -81,3 +81,26 @@ async def end_trigger(trigger_id: str):
 
     # 3 & 4. stop + resolve eligible claims
     return await claim_service.close_resolved_claims()
+
+async def recover_triggers(TRIGGER_TTL: timedelta):
+    print("Recovering Triggers.")
+    active_triggers = await trigger_events.get_active_events()
+
+    now = datetime.now(timezone.utc)
+
+    for trig in active_triggers:
+        trigger_id = str(trig["_id"])
+        created_at = trig["created_at"]
+        if created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=timezone.utc)
+        try :
+            if now - created_at > TRIGGER_TTL:
+                await end_trigger(trigger_id)
+        except Exception as e :
+            print("Error closing trigger", trigger_id, f"\n{e}")
+    
+    print("Closing Resolved Claims.")
+    await claim_service.close_resolved_claims()
+
+async def trigger_event_details(event_id: str) :
+    return await trigger_events.get_trigger_event(str(event_id))

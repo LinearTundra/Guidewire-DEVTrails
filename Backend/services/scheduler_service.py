@@ -3,7 +3,7 @@ from datetime import datetime, timezone, timedelta
 from models import ExternalAPIResponse
 from API import weather_client, aqi_client, disaster_client
 from constants import EventType
-from services import trigger_service
+from services import trigger_service, claim_service
 
 POLL_INTERVAL = 300
 TRIGGER_TTL = timedelta(hours=24)
@@ -136,6 +136,8 @@ async def poll_disasters():
 
 async def run_scheduler():
     try:
+        await claim_service.recover_running_claims()
+        await trigger_service.recover_triggers(TRIGGER_TTL)
         while True:
             try:
                 await asyncio.gather(
