@@ -6,6 +6,11 @@
 
 ---
 
+## 🎥 Pitch Deck
+- View Pitch Deck: [GigShield Pitch Deck](https://canva.link/gxawkh1xzgongob)
+
+---
+
 ## 📲 Try the App (APK)
 
 - Download APK: [GigShield Demo APK](https://drive.google.com/drive/folders/15jDSIe9b2D0wlW0QF7XZjc3xy2DplAWi?usp=sharing)
@@ -16,7 +21,7 @@
 
 ## 🔗 Backend API (Demo)
 
-- API Docs (Swagger): [https://guidewire-devtrails.onrender.com/docs](https://guidewire-devtrails.onrender.com/docs)
+- API Docs (Swagger): [GigShield Backend Docs](https://guidewire-devtrails.onrender.com/docs)
 - Demo Credentials
   - Mobile : 9876543210
   - Password : raju@123
@@ -25,6 +30,60 @@
 > ⚠️ Note: Hosted on Render free tier — initial request may take ~30–60 seconds due to cold start.
 
 > Note: This is a hackathon prototype. Some endpoints operate on mock/synthetic data, and full frontend-backend integration is planned for Phase 3.
+
+---
+
+## ✅ Implemented (Current Prototype)
+### Backend (FastAPI + MongoDB)
+- User registration and authentication (mobile + password)
+- Automatic policy creation on user signup (ensures claim system always has an active policy)
+- Policy lifecycle management (active/inactive, payout tracking, weekly structure)
+- Trigger event system (creation, storage, active/inactive state handling)
+- Claim system:
+  - Auto claim creation on trigger detection
+  - Multiple triggers per claim supported
+  - Claim recovery on server restart (background task restoration)
+  - Trigger cleanup and claim closure logic
+- GPS monitoring pipeline:
+  - Background worker movement tracking
+  - Distance + area-based fraud signals
+- Claim evaluation engine:
+  - Combines GPS checks + ML risk scoring
+  - Produces final claim status (clean / suspicious / rejected)
+- Payout processing:
+  - Policy eligibility checks
+  - Weekly cap enforcement
+  - Automated claim approval/rejection
+### ML Integration (API-based)
+- Risk scoring via external ML service
+- Fraud signal enrichment in claims
+- Premium and payout inputs driven via structured payload
+### Data Models
+- Workers, Auth, Policies, Claims, TriggerEvents fully defined
+- Time-based fields (UTC) across system
+- Support for multi-trigger claims and weekly aggregation
+### System Behavior
+- Async-first architecture using asyncio
+- Parallel execution for:
+  - Claim evaluation
+  - Trigger processing
+  - Worker monitoring
+- Fault-tolerant recovery:
+  - Restores running claim tasks after restart
+  - Cleans stale triggers automatically
+### Frontend (React Native - Prototype)
+- Basic onboarding flow
+- Live dashboard with:
+  - Active policy details
+  - Zone risk indicators
+  - Trigger alerts
+  - Claim status and payout history
+- Dashboard UI
+- Trigger simulation and real-time claim visibility
+- Integration with backend APIs for:
+  - Auth, worker profile, policies, claims, triggers
+- End-to-end user journey supported (signup → policy → trigger → claim → payout)
+- Mobile-first UX with background readiness for GPS-based features
 
 ---
 
