@@ -33,6 +33,48 @@
 
 ---
 
+## 🛠️ Running the Project
+
+### ✅ Recommended (Fully Working Demo)
+- Install and use the APK provided above
+- Backend is already hosted and connected
+- No setup required
+- 
+###⚠️ Backend (Local Setup)
+Not supported in this prototype.
+- The backend depends on secured cloud MongoDB credentials which are not exposed
+- Running locally without these will break core functionality (auth, policies, claims, triggers)
+
+### ⚠️ Frontend (Local Setup)
+Partial only.
+
+Can be started locally, but:
+- Uses hardcoded hosted API endpoints
+- Will not connect to a local backend without modification
+
+To run UI locally:
+```
+cd frontend
+npm install
+npx expo start
+```
+
+### 💡 Notes
+This prototype is designed to be evaluated via APK + hosted backend
+Local setup is intentionally restricted due to:
+- Security (DB credentials)
+- Time constraints (hackathon scope)
+
+---
+
+## 📌 Problem Statement
+
+India's platform-based delivery partners (Zomato, Swiggy, Zepto, Amazon, Dunzo, etc.) lose **20–30% of monthly earnings** during external disruptions like extreme weather, flooding, and dangerous pollution levels. They have no financial safety net. When disruption strikes, they bear the full loss alone.
+
+**GigShield** solves this with a fully automated parametric insurance platform — no paperwork, no loss assessment, instant UPI payout when a verified trigger event occurs in the worker's operating zone.
+
+---
+
 ## ✅ Implemented (Current Prototype)
 ### Backend (FastAPI + MongoDB)
 - User registration and authentication (mobile + password)
@@ -86,13 +128,7 @@
 - Mobile-first UX with background readiness for GPS-based features
 
 ---
-
-## 📌 Problem Statement
-
-India's platform-based delivery partners (Zomato, Swiggy, Zepto, Amazon, Dunzo, etc.) lose **20–30% of monthly earnings** during external disruptions like extreme weather, flooding, and dangerous pollution levels. They have no financial safety net. When disruption strikes, they bear the full loss alone.
-
-**GigShield** solves this with a fully automated parametric insurance platform — no paperwork, no loss assessment, instant UPI payout when a verified trigger event occurs in the worker's operating zone.
-
+## Vision
 ---
 
 ## 🎯 Chosen Persona Segment
