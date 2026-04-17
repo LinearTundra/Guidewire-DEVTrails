@@ -1,17 +1,17 @@
 from database.Database import db
-from models import ApiCache
+from models import ExternalAPIResponse
 from typing import Optional
 from datetime import datetime, timezone, timedelta
 
 
-async def cache_result(cache: ApiCache) -> str:
+async def cache_result(cache: ExternalAPIResponse) -> str:
     """
     Inserts a new API response into the cache collection.
     Called after every successful external API call —
     IMD, NDMA, AQICN, Tomorrow.io.
     
     Args:
-        cache: Validated ApiCache pydantic model instance
+        cache: Validated ExternalAPIResponse pydantic model instance
         
     Returns:
         Inserted document ID as string
