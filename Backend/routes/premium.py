@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from models import ApiResponse
 from database import policies
 from pydantic import BaseModel
-from services import ml_service
+from services import ml_service, premium_service
 from typing import Optional
 
 
@@ -44,10 +44,7 @@ router = APIRouter(prefix="/premium")
 )
 async def calculate_premium(worker_id: str):
     try:
-        result = await policies.get_active_policy(worker_id)
-        premium = result.get("weekly_premium", 25)
-        discount = result.get("streak", 0) // 3
-        premium -= premium * discount / 100
+        premium = premium_service.calculate_premium(worker_id)
 
         return ApiResponse(success=True, data={"premium": premium})
 

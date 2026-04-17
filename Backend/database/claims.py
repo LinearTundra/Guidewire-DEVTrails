@@ -153,6 +153,30 @@ async def get_weekly_payout_total(policy_id: str) -> float:
     claims = await cursor.to_list(length=None)
     return sum(c["claim_amount"] for c in claims)
 
+async def get_worker_weekly_claims(worker_id: str) -> float:
+    """
+    Calculates total payout amount for all approved claims under a policy.
+    Used to check if worker has hit the max_payout cap for the week
+    before initiating a new payout.
+    
+    Args:
+        policy_id: MongoDB ObjectId string of the active policy
+        
+    Returns:
+        Sum of claim_amount for all auto_approved claims under this policy
+    """
+    claims = await db.get_database().claims.find(
+        {
+            "worker_id": worker_id,
+            "status": {"$in": [ClaimStatus.AUTO_APPROVED, ClaimStatus.APPROVED]}
+        }
+    ).to_list(length=None)
+    for claim in claims :
+        if claims is None :
+            continue
+        claim["_id"] = str(claim["_id"])
+    return claims
+
 
 async def update_claim_status(claim_id: str, status: ClaimStatus) -> bool:
     """
@@ -221,7 +245,7 @@ async def add_trigger_to_claim(claim_id: str, trigger_id: str, trigger_event: Ev
 
 async def remove_trigger_from_claim(claim_id: str, trigger_id: str):
     return await db.get_database().claims.update_one(
-        {"_id": claim_id},
+        {"_id": ObjectId(claim_id)},
         {
             "$pull": {
                 "trigger_event_id": trigger_id

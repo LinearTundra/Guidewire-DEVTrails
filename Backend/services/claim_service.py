@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from constants import ClaimStatus, ClaimType, EventType
 from models import Claims
 from database import claims
-from services import gps_service, policy_service, ml_service
+from services import gps_service, policy_service, ml_service, trigger_service, worker_service
 import asyncio
 
 
@@ -101,11 +101,16 @@ async def flag_claim(claim_id: str) -> bool:
 
 
 async def resolve_trigger_in_claims(trigger_id) :
-    tasks = [
-        claims.remove_trigger_from_claim(claim_id, trigger_id) 
-        for claim_id in RUNNING_TASKS
-    ]
-    await asyncio.gather(*tasks, return_exceptions=True)
+    try :
+        tasks = [
+            asyncio.create_task(claims.remove_trigger_from_claim(claim_id, trigger_id))
+            for claim_id in RUNNING_TASKS
+        ]
+        result = await asyncio.gather(*tasks, return_exceptions=True)
+        print(f"\n-----\n{tasks}\n-----\n")
+        print(f"\n-----\n{result}\n-----\n")
+    except Exception as e :
+        print(e)
 
 async def evaluate_claim(claim: dict, result: dict) -> dict:
     gps_status = result["status"]
@@ -114,11 +119,11 @@ async def evaluate_claim(claim: dict, result: dict) -> dict:
     gps_checks = result.get("fraud_checks", {})
 
     # ---- ML payload ----
-    ml_payload = build_ml_payload(distance)
+    ml_payload = await build_ml_payload(claim["worker_id"], distance)
 
     ml_result = await ml_service.get_risk_score(ml_payload)
 
-    final_status = derive_final_status(gps_status, ml_result)
+    final_status, payout = derive_final_status(gps_status, ml_result)
 
     fraud_checks = build_fraud_checks(
         distance,
@@ -128,28 +133,44 @@ async def evaluate_claim(claim: dict, result: dict) -> dict:
         final_status
     )
 
-    return {
-        "final_status": final_status,
-        "fraud_checks": fraud_checks
-    }
+    return (
+        {
+            "final_status": final_status,
+            "fraud_checks": fraud_checks
+        },
+        payout
+    )
 
-def build_ml_payload(distance: float) -> dict:
+async def build_ml_payload(worker_id: str, distance: float) -> dict:
+    try :
+        worker, claims = await asyncio.gather(
+            worker_service.worker_details(worker_id),
+            get_claims_this_week(worker_id)
+        )
+
+        if not worker:
+            raise ValueError("Worker not found")
+    except Exception as e :
+        print(e)
+        worker = {}
+        claims = {}
+    print("DEBUG worker earnings:", worker.get("weekly_earnings"))
     return {
         "precip_mm": 0,
-        "temperature_celsius": 0,
+        "temperature_celsius": 25,
         "humidity": 50,
-        "aqi": 0,
+        "aqi": 100,
 
-        "hours_worked": 8,
+        "hours_worked": 10,
         "distance_km": distance / 1000,
         "orders_completed": 0,
-        "avg_speed": (distance / 1000) / 8 if distance > 0 else 0,
+        "avg_speed": (distance / 1000) / 8,
 
-        "claims_last_week": 0,
-        "weekly_earning": 0,
-        "hours_inactive": 0,
+        "claims_last_week": len(claims),
+        "weekly_earning": worker.get("weekly_earnings", 6000),
+        "hours_inactive": 14,
 
-        "base_price": 100
+        "base_price": 25
     }
 
 def derive_final_status(gps_status: str, ml_result: dict | None) -> str:
@@ -159,12 +180,12 @@ def derive_final_status(gps_status: str, ml_result: dict | None) -> str:
     ml_flag = ml_result.get("fraud_status")
 
     if ml_flag == "fraud":
-        return "fraud"
+        return "fraud", 0
 
+    payout = float(f"{ml_result.get("payout", 0):.02f}")
     if ml_flag == "suspicious" and gps_status == "clean":
-        return "suspicious"
-
-    return gps_status
+        return "suspicious", payout
+    return gps_status, payout
 
 def build_fraud_checks(distance, area, gps_checks, ml_result, final_status):
     return {
@@ -177,15 +198,16 @@ def build_fraud_checks(distance, area, gps_checks, ml_result, final_status):
         "final_status": final_status
     }
 
-async def execute_claim_decision(claim_id: str, claim: dict, final_status: str):
+async def execute_claim_decision(claim_id: str, claim: dict, final_status: str, payout: float) :
     policy_id = claim["policy_id"]
     claim_type = claim.get("claim_type", ClaimType.FULL_DAY)
 
     if final_status == "clean":
         payout = await policy_service.process_claim_payout(
-            policy_id=policy_id,
-            claim_type=claim_type
+            policy_id,
+            payout
         )
+        print("DEBUG payout:", payout)
 
         if payout > 0:
             await claims.update_claim_amount(claim_id, payout)
@@ -212,7 +234,7 @@ async def close_resolved_claims():
         if not claim or isinstance(claim, Exception):
             continue
 
-        if claim.get("trigger_event_ids"):
+        if claim.get("trigger_event_id"):
             continue
 
         task = RUNNING_TASKS.get(claim_id)
@@ -226,7 +248,7 @@ async def close_resolved_claims():
         try:
             result = await task
 
-            evaluation = await evaluate_claim(claim, result)
+            evaluation, payout = await evaluate_claim(claim, result)
 
             await claims.update_fraud_checks(
                 claim_id,
@@ -237,9 +259,11 @@ async def close_resolved_claims():
                 execute_claim_decision(
                     claim_id,
                     claim,
-                    evaluation["final_status"]
+                    evaluation["final_status"],
+                    payout
                 )
             )
+            print(RUNNING_TASKS)
 
         except asyncio.CancelledError:
             continue
@@ -259,16 +283,31 @@ def store_task(claim_id: str, task: asyncio.Task):
 def remove_task(claim_id: str):
     RUNNING_TASKS.pop(claim_id, None)
 
-
 async def recover_running_claims():
+    print("Recovering Claims.")
     active_claims = await claims.get_all_active_claims()
 
     for claim in active_claims:
         claim_id = str(claim["_id"])
-
         if claim_id in RUNNING_TASKS:
             continue
+        event_ids = claim.get("trigger_event_id", [])
+        # -------------------------
+        # Clean stale triggers
+        # -------------------------
+        for event_id in event_ids:
+            try:
+                trigger = await trigger_service.trigger_event_details(event_id)
+                if trigger is None :
+                    continue
+                if not trigger.get("is_active", False):
+                    await resolve_trigger_in_claims(event_id)
+            except Exception:
+                continue
 
+        # -------------------------
+        # Restart monitoring
+        # -------------------------
         worker_id = claim["worker_id"]
         start_time = claim.get("created_at")
 
@@ -281,4 +320,7 @@ async def recover_running_claims():
         )
 
         store_task(claim_id, task)
+    
 
+async def get_claims_this_week(worker_id: str) :
+    return await claims.get_worker_weekly_claims(worker_id)

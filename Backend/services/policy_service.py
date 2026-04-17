@@ -1,8 +1,26 @@
 from database import policies
+from models import Policies
 import asyncio
+
+async def insert_policy(policy: Policies) :
+    return await policies.create_policy(policy)
 
 async def get_worker_active_policy(worker_id: str) :
     return await policies.get_active_policy(worker_id)
+
+async def get_worker_all_policy(worker_id: str) :
+    return await policies.get_policies_by_worker(worker_id)
+
+async def get_last_policy(worker_id: str) :
+    result = await policies.get_policies_by_worker(worker_id)
+    if not result or result is None :
+        return None
+    for policy in result :
+        if policy is None :
+            continue
+        policy["_id"] = str(policy["_id"])
+        return policy
+    return None
 
 async def is_policy_eligible(policy: dict) -> bool:
     if not policy:
@@ -34,7 +52,7 @@ def compute_claim_amount(policy: dict, claim_type: str, activity_hours: float = 
 
     return 0
 
-async def process_claim_payout(policy_id: str, claim_type: str, activity_hours: float = 0) -> float:
+async def process_claim_payout(policy_id: str, amount: float) -> float:
     """
     End-to-end payout logic.
 
@@ -46,8 +64,6 @@ async def process_claim_payout(policy_id: str, claim_type: str, activity_hours: 
 
     if not await is_policy_eligible(policy):
         return 0.0
-
-    amount = compute_claim_amount(policy, claim_type, activity_hours)
 
     if amount <= 0:
         return 0.0
