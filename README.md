@@ -579,16 +579,15 @@ This submission focuses on delivering a working prototype of core system flows. 
 Guidewire-DEVTrails/
 ├── README.md
 ├── .gitignore
-│
 ├── Backend/
-│   ├── main.py                  # FastAPI entry point
-│   ├── models.py                # Pydantic models
-│   ├── constants.py             # Enums (Plan, ClaimStatus, EventType etc.)
+│   ├── main.py                  # FastAPI entry point with lifespan management
+│   ├── models.py                # Pydantic data models
+│   ├── constants.py             # Enums — Plan, ClaimStatus, EventType, Severity
+│   ├── mock-data.py             # One-time database seeding script
 │   ├── requirements.txt
-│   ├── mock-data.py             # Database seeding script
 │   │
-│   ├── database/                # MongoDB CRUD operations
-│   │   ├── Database.py          # Connection singleton
+│   ├── database/                # MongoDB CRUD layer
+│   │   ├── Database.py          # AsyncMongoClient singleton
 │   │   ├── workers.py
 │   │   ├── auth.py
 │   │   ├── policies.py
@@ -599,37 +598,37 @@ Guidewire-DEVTrails/
 │   │   └── api_cache.py
 │   │
 │   ├── routes/                  # FastAPI route handlers
-│   │   ├── auth.py              # Login, register, reset password
-│   │   ├── workers.py           # Worker profile endpoints
-│   │   ├── claims.py            # Claims fetch endpoints
-│   │   ├── policy.py            # Policy endpoints
-│   │   ├── plantiers.py         # Plan tier endpoints
-│   │   ├── premium.py           # Premium calculation
-│   │   ├── gps.py               # GPS log upload
-│   │   └── triggers.py          # Trigger simulation
+│   │   ├── auth.py              # POST /auth/login, /register, /reset-password
+│   │   ├── workers.py           # GET /worker/get-worker-details
+│   │   ├── claims.py            # POST /claims/get-all-claims, /get-last-claim
+│   │   ├── policy.py            # GET /policy/current, /all
+│   │   ├── plantiers.py         # GET /plan-tiers/details, /all
+│   │   ├── premium.py           # GET /premium/calculate
+│   │   ├── gps.py               # POST /gps/post-location, /post-location-many
+│   │   └── triggers.py          # GET /trigger/simulate
 │   │
-│   ├── services/                # Business logic
+│   ├── services/                # Business logic layer
 │   │   ├── claim_service.py     # Claim creation and bulk processing
-│   │   ├── trigger_service.py   # Trigger event handling
-│   │   ├── gps_service.py       # GPS inactivity checks
-│   │   ├── ml_service.py        # ML model integration
+│   │   ├── trigger_service.py   # Trigger event handling and scheduler
+│   │   ├── gps_service.py       # GPS inactivity and fraud checks
+│   │   ├── ml_service.py        # ML API integration
 │   │   └── worker_service.py
 │   │
 │   └── API/                     # External API clients
-│       ├── base_client.py
-│       ├── weather_client.py    # IMD integration
-│       ├── aqi_client.py        # AQICN integration
+│       ├── base_client.py       # Shared httpx async client
+│       ├── weather_client.py    # IMD Mausam integration
+│       ├── aqi_client.py        # AQICN (WAQI) integration
 │       ├── disaster_client.py   # NDMA SACHET integration
-│       └── tomorrow.py          # Tomorrow.io integration
+│       └── tomorrow.py          # Tomorrow.io weather and events
 │
 ├── frontend/                    # React Native (Expo) mobile app
 │   ├── App.tsx
 │   ├── src/
-│   │   ├── screens/             # App screens
-│   │   ├── components/          # Reusable components
-│   │   ├── navigation/          # Tab and stack navigation
-│   │   └── services/            # API service layer
-│   └── android/                 # Android build files
+│   │   ├── screens/             # Login, OTP, Home, Policy, Claims, Profile, SetupProfile
+│   │   ├── components/          # CustomCard, Header
+│   │   ├── navigation/          # AppNavigator, BottomTabs
+│   │   └── services/            # api.ts — backend integration layer
+│   └── android/                 # Android build configuration
 │
 ├── ml
 │   ├── app.py                   # ML model and api endpoint
