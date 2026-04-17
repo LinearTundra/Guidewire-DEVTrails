@@ -1,8 +1,11 @@
+from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, HTTPException
-from models import Worker, Auth, ApiResponse
+from models import Worker, Auth, ApiResponse, Policies
+from constants import Plan
 from services import policy_service
 from database import auth, workers
 from pydantic import BaseModel
+import asyncio
 
 
 """
@@ -64,7 +67,11 @@ async def register(data: RegisterData) :
         email = data.worker.email,
         password = data.password
     )
-    auth_id = await auth.create_auth(user_auth)
+    policy = create_policy_object(worker_id)
+    auth_id, policy_id = await asyncio.gather(
+        auth.create_auth(user_auth),
+        policy_service.insert_policy(policy)
+    ) 
     if auth_id == None :
         workers.delete_worker(worker_id)
         raise HTTPException(status_code=400, detail="Error creating worker, try again")
@@ -81,3 +88,19 @@ async def register(data: RegisterData) :
 async def reset_password(data: LoginData) :
     result = await auth.update_password(data.mobile, data.new_password)
     return ApiResponse(success=result)
+
+def create_policy_object(worker_id: str) :
+    today = datetime.now(timezone.utc)
+    today.replace(hour=0, minute=0, second=0, microsecond=0)
+    return Policies(
+        worker_id = worker_id, 
+        plan = Plan.STANDARD,
+        weekly_premium = 38,
+        max_payout = 1200,
+        current_payout = 0,
+        start_date = today,
+        end_date = today+timedelta(days=6, hours=23, minutes=59, seconds=59),
+        is_active = True,
+        waiting_period_complete = True,
+        streak_week = 2
+    )
